@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 )
 
 // Struktur request dari User/Frontend
@@ -41,6 +42,13 @@ func main() {
 
 	// 2. Setup Gin Router
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		AllowCredentials: true,
+		ExposeHeaders:    []string{"Content-Length"},
+	}))
 
 	// 3. Endpoint Utama
 	r.POST("/ask", func(c *gin.Context) {
