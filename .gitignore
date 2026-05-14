@@ -1,0 +1,22 @@
+# --- Python & FastAPI ---
+__pycache__/
+venv/
+env/
+.env
+
+# --- AI Models & Checkpoints ---
+*.safetensors
+*.bin
+*.pt
+ai-service/checkpoint-*/
+
+# --- Golang & Database ---
+backend-service/backend
+backend-service/backend.exe
+
+backend-service/hris.db
+backend-service/*.db-journal
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
