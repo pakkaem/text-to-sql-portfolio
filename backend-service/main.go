@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -29,8 +31,45 @@ type AIResponse struct {
 	SQLQuery string `json:"sql_query"`
 }
 
-// Skema DDL HRIS yang jadi contekan untuk AI (Disamakan dengan skema di database.go)
-const hrisSchema = `
+// Struktur untuk retry: request ke AI dengan error feedback
+type AIRetryRequest struct {
+	SchemaContext string `json:"schema_context"`
+	Question      string `json:"question"`
+	PrevSQL       string `json:"prev_sql"`
+	ErrorMsg      string `json:"error_msg"`
+}
+
+// getSchemaFromDB membaca DDL aktual dari sqlite_master agar AI mendapat schema yang 100% akurat
+// termasuk FOREIGN KEY, CHECK constraints, dan kolom terbaru
+func getSchemaFromDB(db *sql.DB) string {
+	rows, err := db.Query("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+	if err != nil {
+		log.Printf("WARNING: Gagal membaca schema dari database: %v. Menggunakan fallback.", err)
+		return hrisSchemaFallback
+	}
+	defer rows.Close()
+
+	var schemaBuilder strings.Builder
+	for rows.Next() {
+		var sqlStmt string
+		if err := rows.Scan(&sqlStmt); err != nil {
+			continue
+		}
+		if sqlStmt != "" {
+			schemaBuilder.WriteString(sqlStmt + ";\n\n")
+		}
+	}
+
+	schema := strings.TrimSpace(schemaBuilder.String())
+	if schema == "" {
+		log.Println("WARNING: Schema kosong dari database. Menggunakan fallback.")
+		return hrisSchemaFallback
+	}
+	return schema
+}
+
+// Fallback schema jika gagal baca dari database
+const hrisSchemaFallback = `
 CREATE TABLE departments (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);
 CREATE TABLE employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, department_id INTEGER, job_title TEXT, hire_date TEXT NOT NULL);
 CREATE TABLE attendance_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, employee_id INTEGER, log_date TEXT NOT NULL, status TEXT);
@@ -38,6 +77,23 @@ CREATE TABLE payroll (id INTEGER PRIMARY KEY AUTOINCREMENT, employee_id INTEGER,
 CREATE TABLE projects (id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT NOT NULL, budget REAL NOT NULL, status TEXT);
 CREATE TABLE employee_projects (employee_id INTEGER, project_id INTEGER, role TEXT NOT NULL, PRIMARY KEY (employee_id, project_id));
 `
+
+// isReadOnlySQL memvalidasi bahwa query hanya berupa SELECT statement (read-only)
+func isReadOnlySQL(query string) bool {
+	normalized := strings.TrimSpace(query)
+	normalized = strings.ToUpper(normalized)
+	return strings.HasPrefix(normalized, "SELECT") || strings.HasPrefix(normalized, "WITH")
+}
+
+// ensureLimit menambahkan LIMIT jika query tidak memiliki LIMIT clause
+func ensureLimit(query string, maxRows int) string {
+	upper := strings.ToUpper(strings.TrimSpace(query))
+	if !strings.Contains(upper, " LIMIT ") {
+		query = strings.TrimRight(strings.TrimSpace(query), ";")
+		query = fmt.Sprintf("%s LIMIT %d", query, maxRows)
+	}
+	return query
+}
 
 // getEnv mengambil environment variable dengan fallback default
 func getEnv(key, fallback string) string {
@@ -47,14 +103,35 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// isReadOnlySQL memvalidasi bahwa query hanya berupa SELECT statement (read-only)
-func isReadOnlySQL(query string) bool {
-	// Trim whitespace dan newline, ambil kata pertama
-	normalized := strings.TrimSpace(query)
-	normalized = strings.ToUpper(normalized)
+// callAIService mengirim request ke AI service dan mengembalikan generated SQL
+func callAIService(aiServiceURL string, reqBody interface{}) (string, error) {
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("gagal marshal request: %w", err)
+	}
 
-	// Hanya izinkan SELECT dan WITH (CTE yang diakhiri SELECT)
-	return strings.HasPrefix(normalized, "SELECT") || strings.HasPrefix(normalized, "WITH")
+	aiResp, err := http.Post(aiServiceURL+"/generate-sql", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", fmt.Errorf("gagal terhubung ke AI Service: %w", err)
+	}
+	defer aiResp.Body.Close()
+
+	if aiResp.StatusCode != 200 {
+		errBody, _ := io.ReadAll(aiResp.Body)
+		return "", fmt.Errorf("AI Service error (status %d): %s", aiResp.StatusCode, string(errBody))
+	}
+
+	bodyBytes, err := io.ReadAll(aiResp.Body)
+	if err != nil {
+		return "", fmt.Errorf("gagal membaca response AI: %w", err)
+	}
+
+	var aiResult AIResponse
+	if err := json.Unmarshal(bodyBytes, &aiResult); err != nil {
+		return "", fmt.Errorf("gagal parse response AI: %w", err)
+	}
+
+	return strings.TrimSpace(aiResult.SQLQuery), nil
 }
 
 func main() {
@@ -67,7 +144,11 @@ func main() {
 	db := initDB()
 	defer db.Close()
 
-	// 2. Setup Gin Router
+	// 2. Baca schema aktual dari database (Fix: Dynamic Schema)
+	hrisSchema := getSchemaFromDB(db)
+	log.Printf("Schema berhasil dibaca dari database (%d karakter)", len(hrisSchema))
+
+	// 3. Setup Gin Router
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(corsOrigins, ","),
@@ -77,20 +158,18 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 	}))
 
-	// 3. Health Check Endpoint
+	// 4. Health Check Endpoint
 	r.GET("/health", func(c *gin.Context) {
-		// Cek koneksi database
 		if err := db.Ping(); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status":  "unhealthy",
-				"db":      "disconnected",
-				"ai_url":  aiServiceURL,
-				"error":   err.Error(),
+				"status": "unhealthy",
+				"db":     "disconnected",
+				"ai_url": aiServiceURL,
+				"error":  err.Error(),
 			})
 			return
 		}
 
-		// Cek koneksi ke AI Service
 		aiHealthy := false
 		aiCheckResp, err := http.Get(aiServiceURL + "/docs")
 		if err == nil && aiCheckResp.StatusCode == 200 {
@@ -102,7 +181,7 @@ func main() {
 		httpStatus := http.StatusOK
 		if !aiHealthy {
 			status = "degraded"
-			httpStatus = http.StatusPartialContent // 206: DB ok, AI tidak tersedia
+			httpStatus = http.StatusPartialContent
 		}
 
 		c.JSON(httpStatus, gin.H{
@@ -113,7 +192,7 @@ func main() {
 		})
 	})
 
-	// 4. Endpoint Utama
+	// 5. Endpoint Utama
 	r.POST("/ask", func(c *gin.Context) {
 		var req AskRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -126,47 +205,17 @@ func main() {
 			SchemaContext: hrisSchema,
 			Question:      req.Question,
 		}
-		jsonData, err := json.Marshal(aiReqBody)
+
+		generatedSQL, err := callAIService(aiServiceURL, aiReqBody)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memproses request internal"})
+			log.Printf("ERROR: %v", err)
+			if strings.Contains(err.Error(), "gagal terhubung") {
+				c.JSON(http.StatusBadGateway, gin.H{"error": "Gagal terhubung ke AI Service", "ai_url": aiServiceURL})
+			} else {
+				c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+			}
 			return
 		}
-
-		// Tembak ke API FastAPI
-		aiResp, err := http.Post(aiServiceURL+"/generate-sql", "application/json", bytes.NewBuffer(jsonData))
-		if err != nil {
-			log.Printf("ERROR: Gagal terhubung ke AI Service: %v", err)
-			c.JSON(http.StatusBadGateway, gin.H{"error": "Gagal terhubung ke AI Service", "ai_url": aiServiceURL})
-			return
-		}
-		defer aiResp.Body.Close()
-
-		if aiResp.StatusCode != 200 {
-			// Baca body error dari AI service untuk debugging
-			errBody, _ := io.ReadAll(aiResp.Body)
-			log.Printf("ERROR: AI Service mengembalikan status %d: %s", aiResp.StatusCode, string(errBody))
-			c.JSON(http.StatusBadGateway, gin.H{
-				"error":    "AI Service mengembalikan error",
-				"ai_error": string(errBody),
-			})
-			return
-		}
-
-		bodyBytes, err := io.ReadAll(aiResp.Body)
-		if err != nil {
-			log.Printf("ERROR: Gagal membaca response dari AI Service: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca response dari AI Service"})
-			return
-		}
-
-		var aiResult AIResponse
-		if err := json.Unmarshal(bodyBytes, &aiResult); err != nil {
-			log.Printf("ERROR: Gagal parse response AI: %v, body: %s", err, string(bodyBytes))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal parse response dari AI Service"})
-			return
-		}
-
-		generatedSQL := strings.TrimSpace(aiResult.SQLQuery)
 
 		// --- VALIDASI SQL READ-ONLY ---
 		if !isReadOnlySQL(generatedSQL) {
@@ -179,15 +228,55 @@ func main() {
 		}
 
 		// --- FASE 2: EKSEKUSI SQL KE DATABASE (DYNAMIC SCANNING) ---
+		// Tambahkan LIMIT otomatis jika tidak ada (mencegah result set berlebihan)
+		generatedSQL = ensureLimit(generatedSQL, 100)
+
 		rows, err := db.Query(generatedSQL)
+
+		// --- RETRY LOGIC: Jika gagal, minta AI perbaiki query ---
 		if err != nil {
-			log.Printf("ERROR: Gagal eksekusi SQL: %s | Error: %v", generatedSQL, err)
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":          "AI menghasilkan SQL yang tidak valid",
-				"generated_sql": generatedSQL,
-				"db_message":     err.Error(),
-			})
-			return
+			log.Printf("WARNING: SQL pertama gagal: %s | Error: %v. Mencoba retry...", generatedSQL, err)
+
+			retryReq := AIRetryRequest{
+				SchemaContext: hrisSchema,
+				Question:      req.Question,
+				PrevSQL:       generatedSQL,
+				ErrorMsg:      err.Error(),
+			}
+
+			retrySQL, retryErr := callAIService(aiServiceURL, retryReq)
+			if retryErr != nil {
+				log.Printf("ERROR: Retry juga gagal: %v", retryErr)
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":          "AI menghasilkan SQL yang tidak valid (retry gagal)",
+					"generated_sql": generatedSQL,
+					"db_message":     err.Error(),
+				})
+				return
+			}
+
+			if !isReadOnlySQL(retrySQL) {
+				log.Printf("WARNING: AI retry menghasilkan non-SELECT query: %s", retrySQL)
+				c.JSON(http.StatusForbidden, gin.H{
+					"error":          "Query ditolak: hanya SELECT yang diizinkan (setelah retry)",
+					"generated_sql": retrySQL,
+				})
+				return
+			}
+
+			retrySQL = ensureLimit(retrySQL, 100)
+			rows, err = db.Query(retrySQL)
+			if err != nil {
+				log.Printf("ERROR: Retry SQL juga gagal dieksekusi: %s | Error: %v", retrySQL, err)
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":          "AI menghasilkan SQL yang tidak valid (setelah retry)",
+					"generated_sql": retrySQL,
+					"original_sql":   generatedSQL,
+					"db_message":     err.Error(),
+				})
+				return
+			}
+			generatedSQL = retrySQL // Update generated SQL untuk response
 		}
 		defer rows.Close()
 
@@ -202,25 +291,20 @@ func main() {
 		var finalResult []map[string]interface{}
 
 		for rows.Next() {
-			// Buat wadah dinamis berdasarkan jumlah kolom
 			columns := make([]interface{}, len(cols))
 			columnPointers := make([]interface{}, len(cols))
 			for i := range columns {
 				columnPointers[i] = &columns[i]
 			}
 
-			// Scan data dari database
 			if err := rows.Scan(columnPointers...); err != nil {
 				log.Printf("WARNING: Gagal scan row: %v", err)
 				continue
 			}
 
-			// Petakan data ke bentuk JSON (Map)
 			rowData := make(map[string]interface{})
 			for i, colName := range cols {
 				val := columnPointers[i].(*interface{})
-
-				// Konversi tipe data byte ke string agar terbaca di JSON
 				if b, ok := (*val).([]byte); ok {
 					rowData[colName] = string(b)
 				} else {
@@ -230,12 +314,10 @@ func main() {
 			finalResult = append(finalResult, rowData)
 		}
 
-		// Cek error dari iterasi rows
 		if err := rows.Err(); err != nil {
 			log.Printf("WARNING: Error saat iterasi rows: %v", err)
 		}
 
-		// Handle case data kosong (bukan null)
 		if finalResult == nil {
 			finalResult = []map[string]interface{}{}
 		}

@@ -14,6 +14,8 @@ app = FastAPI(
 class QueryRequest(BaseModel):
     schema_context: str
     question: str
+    prev_sql: str = None      # Optional: SQL sebelumnya yang gagal (untuk retry)
+    error_msg: str = None     # Optional: Error message dari eksekusi sebelumnya
 
 class QueryResponse(BaseModel):
     sql_query: str
@@ -29,7 +31,7 @@ def load_ai_model():
     print("Memuat base model dan LoRA adapter... (Mohon tunggu)")
     
     base_model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-    adapter_path = "./checkpoint-200" 
+    adapter_path = "./checkpoint-1950" 
     
     try:
         tokenizer = AutoTokenizer.from_pretrained(base_model_id)
@@ -59,9 +61,41 @@ async def generate_sql(request: QueryRequest):
     if not model or not tokenizer:
         raise HTTPException(status_code=500, detail="Model belum siap diload.")
 
-    # Format Prompt Template persis seperti di Colab
-    prompt = f"""### Instruction:
+    # Format Prompt — Improved dengan rules dan retry support
+    # Cek apakah ini retry request (ada error sebelumnya)
+    if request.prev_sql and request.error_msg:
+        prompt = f"""### Instruction:
+Kamu adalah asisten database AI. Query SQL sebelumnya gagal dieksekusi. Perbaiki query tersebut berdasarkan schema dan error yang diberikan.
+
+### Rules:
+- Hanya gunakan nama kolom yang ADA di schema di bawah
+- Gunakan nama kolom PERSIS seperti yang tertulis di CREATE TABLE
+- Hanya buat SELECT statement
+- Pastikan kolom yang di-SELECT, JOIN, dan WHERE benar-benar ada di tabel yang sesuai
+
+### Schema:
+{request.schema_context}
+
+### Question:
+{request.question}
+
+### Previous SQL (Error):
+{request.prev_sql}
+
+### Error Message:
+{request.error_msg}
+
+### Corrected SQL Query:
+"""
+    else:
+        prompt = f"""### Instruction:
 Kamu adalah asisten database AI. Berdasarkan skema tabel berikut, buatlah query SQL yang tepat untuk menjawab pertanyaan.
+
+### Rules:
+- Hanya gunakan nama kolom yang ADA di schema di bawah
+- Gunakan nama kolom PERSIS seperti yang tertulis di CREATE TABLE
+- Hanya buat SELECT statement
+- Pastikan kolom yang di-SELECT, JOIN, dan WHERE benar-benar ada di tabel yang sesuai
 
 ### Schema:
 {request.schema_context}
@@ -86,8 +120,12 @@ Kamu adalah asisten database AI. Berdasarkan skema tabel berikut, buatlah query 
             )
             
         # Potong hasil agar hanya menyisakan query SQL-nya saja
+        # Handle baik prompt normal maupun retry (Corrected SQL Query)
         full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        sql_result = full_output.split("### SQL Query:")[-1].strip()
+        if "### Corrected SQL Query:" in full_output:
+            sql_result = full_output.split("### Corrected SQL Query:")[-1].strip()
+        else:
+            sql_result = full_output.split("### SQL Query:")[-1].strip()
         
         return QueryResponse(sql_query=sql_result)
         
