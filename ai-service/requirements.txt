@@ -1,6 +1,14 @@
-fastapi==0.95.0
-peft==0.1.0
-pydantic==2.10.2
-torch==2.7.1
-transformers==4.31.0
-uvicorn==0.34.0
+# === Core (selalu dibutuhkan) ===
+fastapi>=0.100.0
+pydantic>=2.0.0
+uvicorn>=0.23.0
+httpx>=0.25.0
+python-dotenv>=1.0.0
+
+# === Hanya untuk mode "lora" atau "zero-shot" (model lokal) ===
+# Uncomment jika ingin menjalankan model lokal:
+# torch>=2.0.0
+# transformers>=4.38.0
+# peft>=0.8.0
+# accelerate>=0.25.0
+# sentencepiece>=0.1.99
