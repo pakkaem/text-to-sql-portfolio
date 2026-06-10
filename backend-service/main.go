@@ -85,11 +85,73 @@ func isReadOnlySQL(query string) bool {
 	return strings.HasPrefix(normalized, "SELECT") || strings.HasPrefix(normalized, "WITH")
 }
 
+// cleanSQLQuery membersihkan output model AI dari noise
+// - Ambil hanya baris pertama yang valid sebagai SQL
+// - Hapus komentar, baris kosong, dan teks non-SQL setelah titik koma pertama
+// - Pastikan query berakhir dengan benar
+func cleanSQLQuery(query string) string {
+	// Bersihkan whitespace
+	query = strings.TrimSpace(query)
+
+	// Jika ada multiple lines, ambil hanya baris pertama yang mengandung SQL
+	lines := strings.Split(query, "\n")
+	var sqlLines []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "--") {
+			continue
+		}
+		// Hentikan jika baris terlihat bukan SQL (misal: penjelasan model setelah query)
+		if strings.HasPrefix(strings.ToUpper(line), "THE ") ||
+			strings.HasPrefix(strings.ToUpper(line), "THIS ") ||
+			strings.HasPrefix(strings.ToUpper(line), "HERE ") ||
+			strings.HasPrefix(strings.ToUpper(line), "NOTE ") {
+			break
+		}
+		sqlLines = append(sqlLines, line)
+	}
+	query = strings.Join(sqlLines, " ")
+
+	// Hapus trailing karakter yang tidak valid
+	query = strings.TrimRight(query, ";")
+
+	// Hapus trailing duplikasi kata (model kecil kadang mengulang)
+	// Cek apakah query berakhir dengan klausa yang tidak lengkap
+	upper := strings.ToUpper(query)
+	incompleteSuffixes := []string{
+		" ON", " AND", " OR", " WHERE", " JOIN", " FROM", " SET",
+		" GROUP BY", " ORDER BY", " HAVING", " SELECT",
+	}
+	for _, suffix := range incompleteSuffixes {
+		if strings.HasSuffix(upper, suffix) {
+			// Potong suffix yang tidak lengkap
+			query = strings.TrimRight(query[:len(query)-len(suffix)], " ")
+			upper = strings.ToUpper(query)
+		}
+	}
+
+	return query
+}
+
 // ensureLimit menambahkan LIMIT jika query tidak memiliki LIMIT clause
+// Hanya ditambahkan jika query valid (dimulai dengan SELECT dan tidak terpotong)
 func ensureLimit(query string, maxRows int) string {
-	upper := strings.ToUpper(strings.TrimSpace(query))
+	query = strings.TrimSpace(query)
+	upper := strings.ToUpper(query)
+
+	// Validasi dasar: query harus dimulai dengan SELECT/WITH dan cukup panjang
+	if !strings.HasPrefix(upper, "SELECT") && !strings.HasPrefix(upper, "WITH") {
+		return query
+	}
+
+	// Cek apakah query terlihat terpotong (terlalu pendek atau tidak lengkap)
+	// Minimal query SELECT yang valid: "SELECT x FROM y" = ~17 chars
+	if len(query) < 15 {
+		return query // Jangan tambahkan LIMIT ke query yang jelas terpotong
+	}
+
 	if !strings.Contains(upper, " LIMIT ") {
-		query = strings.TrimRight(strings.TrimSpace(query), ";")
+		query = strings.TrimRight(query, ";")
 		query = fmt.Sprintf("%s LIMIT %d", query, maxRows)
 	}
 	return query
@@ -217,6 +279,10 @@ func main() {
 			return
 		}
 
+		// --- BERSIHKAN OUTPUT MODEL ---
+		generatedSQL = cleanSQLQuery(generatedSQL)
+		log.Printf("DEBUG: SQL setelah dibersihkan: %s", generatedSQL)
+
 		// --- VALIDASI SQL READ-ONLY ---
 		if !isReadOnlySQL(generatedSQL) {
 			log.Printf("WARNING: AI menghasilkan non-SELECT query: %s", generatedSQL)
@@ -264,6 +330,7 @@ func main() {
 				return
 			}
 
+			retrySQL = cleanSQLQuery(retrySQL)
 			retrySQL = ensureLimit(retrySQL, 100)
 			rows, err = db.Query(retrySQL)
 			if err != nil {

@@ -112,7 +112,7 @@ Kamu adalah asisten database AI. Berdasarkan skema tabel berikut, buatlah query 
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_new_tokens=50,
+                max_new_tokens=200,
                 temperature=0.1,
                 do_sample=True,
                 repetition_penalty=1.2,
