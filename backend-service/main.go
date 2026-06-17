@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -254,7 +255,62 @@ func main() {
 		})
 	})
 
-	// 5. Endpoint: Explain SQL
+	// 5. Endpoint: Get Schema Info
+	type ColumnInfo struct {
+		Name string      `json:"name"`
+		Type string      `json:"type"`
+		PK   bool        `json:"pk"`
+	}
+	type TableInfo struct {
+		Name    string       `json:"name"`
+		Columns []ColumnInfo `json:"columns"`
+	}
+
+	r.GET("/schema", func(c *gin.Context) {
+		tables := []TableInfo{}
+
+		// Get all table names
+		tblRows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca schema"})
+			return
+		}
+		defer tblRows.Close()
+
+		for tblRows.Next() {
+			var tableName string
+			if err := tblRows.Scan(&tableName); err != nil {
+				continue
+			}
+
+			// Get columns for this table
+			colRows, err := db.Query(fmt.Sprintf("PRAGMA table_info('%s')", tableName))
+			if err != nil {
+				continue
+			}
+
+			var cols []ColumnInfo
+			for colRows.Next() {
+				var cid int
+				var colName, colType string
+				var notnull int
+				var dfltValue interface{}
+				var pk int
+				if err := colRows.Scan(&cid, &colName, &colType, &notnull, &dfltValue, &pk); err != nil {
+					continue
+				}
+				cols = append(cols, ColumnInfo{Name: colName, Type: colType, PK: pk > 0})
+			}
+			colRows.Close()
+
+			// Get row count
+			tables = append(tables, TableInfo{Name: tableName, Columns: cols})
+		}
+
+		c.JSON(http.StatusOK, gin.H{"tables": tables})
+	})
+
+	// 6. Endpoint: Explain SQL
 	type ExplainRequest struct {
 		SQL      string `json:"sql" binding:"required"`
 		Question string `json:"question"`
@@ -294,8 +350,10 @@ func main() {
 		c.JSON(http.StatusOK, result)
 	})
 
-	// 6. Endpoint Utama
+	// 7. Endpoint Utama
 	r.POST("/ask", func(c *gin.Context) {
+		startTime := time.Now()
+
 		var req AskRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Format JSON tidak valid atau question kosong"})
@@ -430,10 +488,13 @@ func main() {
 		}
 
 		// --- FASE 3: KEMBALIKAN HASIL KE USER ---
+		elapsed := time.Since(startTime)
 		c.JSON(http.StatusOK, gin.H{
-			"question":      req.Question,
-			"generated_sql": generatedSQL,
-			"data":          finalResult,
+			"question":       req.Question,
+			"generated_sql":  generatedSQL,
+			"data":           finalResult,
+			"response_time":  fmt.Sprintf("%.0fms", float64(elapsed.Milliseconds())),
+			"response_ms":    elapsed.Milliseconds(),
 		})
 	})
 
