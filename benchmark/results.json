@@ -1,0 +1,1388 @@
+{
+  "metadata": {
+    "benchmark_version": "1.0",
+    "run_date": "2026-06-17T14:50:11.369845",
+    "backend_url": "http://localhost:8080",
+    "total_questions": 50
+  },
+  "summary": {
+    "execution_accuracy_pct": 100.0,
+    "result_accuracy_pct": 50.0,
+    "exact_match_count": 0,
+    "error_count": 0,
+    "avg_response_ms": 908.0,
+    "total_time_ms": 45394
+  },
+  "stats_by_difficulty": {
+    "easy": {
+      "total": 18,
+      "executed": 18,
+      "matched": 10
+    },
+    "medium": {
+      "total": 20,
+      "executed": 20,
+      "matched": 10
+    },
+    "hard": {
+      "total": 12,
+      "executed": 12,
+      "matched": 5
+    }
+  },
+  "stats_by_category": {
+    "simple_select": {
+      "total": 10,
+      "executed": 10,
+      "matched": 7
+    },
+    "filter_where": {
+      "total": 8,
+      "executed": 8,
+      "matched": 3
+    },
+    "aggregation": {
+      "total": 10,
+      "executed": 10,
+      "matched": 3
+    },
+    "join": {
+      "total": 10,
+      "executed": 10,
+      "matched": 7
+    },
+    "complex": {
+      "total": 8,
+      "executed": 8,
+      "matched": 5
+    },
+    "advanced": {
+      "total": 4,
+      "executed": 4,
+      "matched": 0
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all departments",
+      "expected_sql": "SELECT * FROM departments",
+      "generated_sql": "SELECT name FROM departments LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "DEPARTMENTS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 1065,
+      "error": null
+    },
+    {
+      "id": 2,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "Show all employees",
+      "expected_sql": "SELECT * FROM employees",
+      "generated_sql": "SELECT * FROM employees LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 9,
+      "generated_data_count": 9,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 834,
+      "error": null
+    },
+    {
+      "id": 3,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "What projects exist in the system?",
+      "expected_sql": "SELECT * FROM projects",
+      "generated_sql": "SELECT project_name FROM projects LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 3,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "PROJECTS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 769,
+      "error": null
+    },
+    {
+      "id": 4,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "Show all employee job titles",
+      "expected_sql": "SELECT DISTINCT job_title FROM employees",
+      "generated_sql": "SELECT job_title FROM employees LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 9,
+      "generated_data_count": 9,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "JOB_TITLE",
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 716,
+      "error": null
+    },
+    {
+      "id": 5,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all attendance records",
+      "expected_sql": "SELECT * FROM attendance_logs",
+      "generated_sql": "SELECT * FROM attendance_logs LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 36,
+      "generated_data_count": 36,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "ATTENDANCE_LOGS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 2045,
+      "error": null
+    },
+    {
+      "id": 6,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "Show all payroll records",
+      "expected_sql": "SELECT * FROM payroll",
+      "generated_sql": "SELECT * FROM payroll LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 34,
+      "generated_data_count": 34,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "PAYROLL"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 1958,
+      "error": null
+    },
+    {
+      "id": 7,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all project statuses",
+      "expected_sql": "SELECT DISTINCT status FROM projects",
+      "generated_sql": "SELECT status FROM projects LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 2,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "PROJECTS",
+          "STATUS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 661,
+      "error": null
+    },
+    {
+      "id": 8,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "How many employees are in the system?",
+      "expected_sql": "SELECT COUNT(*) FROM employees",
+      "generated_sql": "SELECT COUNT(id) FROM employees LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.5,
+        "keywords_found": [
+          "EMPLOYEES"
+        ],
+        "keywords_missing": [
+          "COUNT(*)"
+        ]
+      },
+      "response_ms": 1273,
+      "error": null
+    },
+    {
+      "id": 9,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "How many departments are there?",
+      "expected_sql": "SELECT COUNT(*) FROM departments",
+      "generated_sql": "SELECT COUNT(id) FROM departments LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.5,
+        "keywords_found": [
+          "DEPARTMENTS"
+        ],
+        "keywords_missing": [
+          "COUNT(*)"
+        ]
+      },
+      "response_ms": 650,
+      "error": null
+    },
+    {
+      "id": 10,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "Show the names and emails of all employees",
+      "expected_sql": "SELECT name, email FROM employees",
+      "generated_sql": "SELECT name FROM employees LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 9,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.333,
+        "keywords_found": [
+          "EMPLOYEES"
+        ],
+        "keywords_missing": [
+          "EMAIL",
+          "NAME,"
+        ]
+      },
+      "response_ms": 3035,
+      "error": null
+    },
+    {
+      "id": 11,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show employees hired after 2023",
+      "expected_sql": "SELECT * FROM employees WHERE hire_date > '2023-12-31'",
+      "generated_sql": "SELECT name FROM employees WHERE hire_date > '2023-12-31' LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 3,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "'2023-12-31'",
+          "HIRE_DATE",
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 517,
+      "error": null
+    },
+    {
+      "id": 12,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Which employees have a salary greater than 8000?",
+      "expected_sql": "SELECT * FROM employees WHERE salary > 8000",
+      "generated_sql": "SELECT e.name FROM employees e JOIN payroll p ON e.id = p.employee_id WHERE p.base_salary > 8000 LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 30,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "SALARY",
+          "8000",
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 740,
+      "error": null
+    },
+    {
+      "id": 13,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show ongoing projects only",
+      "expected_sql": "SELECT * FROM projects WHERE status = 'Ongoing'",
+      "generated_sql": "SELECT p.project_name FROM projects p WHERE p.status = 'Ongoing' LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 2,
+      "generated_data_count": 2,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "'ONGOING'",
+          "PROJECTS",
+          "STATUS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 449,
+      "error": null
+    },
+    {
+      "id": 14,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "List employees who are Software Engineers",
+      "expected_sql": "SELECT * FROM employees WHERE job_title = 'Software Engineer'",
+      "generated_sql": "SELECT e.name FROM employees e WHERE e.job_title = 'Software Engineer' LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 0,
+      "generated_data_count": 0,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "'SOFTWARE",
+          "ENGINEER'",
+          "JOB_TITLE",
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 540,
+      "error": null
+    },
+    {
+      "id": 15,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show attendance records where status is Absent",
+      "expected_sql": "SELECT * FROM attendance_logs WHERE status = 'Absent'",
+      "generated_sql": "SELECT * FROM attendance_logs WHERE status = 'Absent' LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 4,
+      "generated_data_count": 4,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "ATTENDANCE_LOGS",
+          "STATUS",
+          "'ABSENT'"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 489,
+      "error": null
+    },
+    {
+      "id": 16,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "List completed projects",
+      "expected_sql": "SELECT * FROM projects WHERE status = 'Completed'",
+      "generated_sql": "SELECT p.project_name FROM projects p WHERE p.status = 'Completed' LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 0,
+      "generated_data_count": 0,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "'COMPLETED'",
+          "PROJECTS",
+          "STATUS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 736,
+      "error": null
+    },
+    {
+      "id": 17,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show employees whose name starts with A",
+      "expected_sql": "SELECT * FROM employees WHERE name LIKE 'A%'",
+      "generated_sql": "SELECT name FROM employees WHERE name LIKE 'A%' LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 2,
+      "generated_data_count": 2,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "NAME",
+          "'A%'",
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 540,
+      "error": null
+    },
+    {
+      "id": 18,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Which projects have a budget greater than 100000?",
+      "expected_sql": "SELECT * FROM projects WHERE budget > 100000",
+      "generated_sql": "SELECT project_name FROM projects WHERE budget > 100000 LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 3,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "100000",
+          "PROJECTS",
+          "BUDGET"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 542,
+      "error": null
+    },
+    {
+      "id": 19,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the average salary of all employees?",
+      "expected_sql": "SELECT AVG(salary) FROM employees",
+      "generated_sql": "SELECT AVG(p.base_salary) FROM payroll p LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.0,
+        "keywords_found": [],
+        "keywords_missing": [
+          "AVG(SALARY)",
+          "EMPLOYEES"
+        ]
+      },
+      "response_ms": 760,
+      "error": null
+    },
+    {
+      "id": 20,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the total budget of all projects?",
+      "expected_sql": "SELECT SUM(budget) FROM projects",
+      "generated_sql": "SELECT SUM(budget) FROM projects LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "PROJECTS",
+          "SUM(BUDGET)"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 963,
+      "error": null
+    },
+    {
+      "id": 21,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many employees are in each department?",
+      "expected_sql": "SELECT department_id, COUNT(*) FROM employees GROUP BY department_id",
+      "generated_sql": "SELECT d.name, COUNT(e.id) FROM employees e JOIN departments d ON e.department_id = d.id GROUP BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.5,
+        "keywords_found": [
+          "EMPLOYEES",
+          "DEPARTMENT_ID"
+        ],
+        "keywords_missing": [
+          "COUNT(*)",
+          "DEPARTMENT_ID,"
+        ]
+      },
+      "response_ms": 790,
+      "error": null
+    },
+    {
+      "id": 22,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the average salary per department?",
+      "expected_sql": "SELECT department_id, AVG(salary) FROM employees GROUP BY department_id",
+      "generated_sql": "SELECT d.name, AVG(p.base_salary) FROM employees e JOIN departments d ON e.department_id = d.id JOIN payroll p ON e.id = p.employee_id GROUP BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.5,
+        "keywords_found": [
+          "EMPLOYEES",
+          "DEPARTMENT_ID"
+        ],
+        "keywords_missing": [
+          "AVG(SALARY)",
+          "DEPARTMENT_ID,"
+        ]
+      },
+      "response_ms": 1021,
+      "error": null
+    },
+    {
+      "id": 23,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the highest salary in the company?",
+      "expected_sql": "SELECT MAX(salary) FROM employees",
+      "generated_sql": "SELECT MAX(base_salary + bonus) FROM payroll LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.0,
+        "keywords_found": [],
+        "keywords_missing": [
+          "MAX(SALARY)",
+          "EMPLOYEES"
+        ]
+      },
+      "response_ms": 1010,
+      "error": null
+    },
+    {
+      "id": 24,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the lowest salary in the company?",
+      "expected_sql": "SELECT MIN(salary) FROM employees",
+      "generated_sql": "SELECT MIN(base_salary) FROM payroll LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.0,
+        "keywords_found": [],
+        "keywords_missing": [
+          "MIN(SALARY)",
+          "EMPLOYEES"
+        ]
+      },
+      "response_ms": 676,
+      "error": null
+    },
+    {
+      "id": 25,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many projects have each status?",
+      "expected_sql": "SELECT status, COUNT(*) FROM projects GROUP BY status",
+      "generated_sql": "SELECT status, COUNT(id) FROM projects GROUP BY status LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 2,
+      "generated_data_count": 2,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.75,
+        "keywords_found": [
+          "PROJECTS",
+          "STATUS,",
+          "STATUS"
+        ],
+        "keywords_missing": [
+          "COUNT(*)"
+        ]
+      },
+      "response_ms": 555,
+      "error": null
+    },
+    {
+      "id": 26,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the total bonus amount paid across all payroll records?",
+      "expected_sql": "SELECT SUM(bonus) FROM payroll",
+      "generated_sql": "SELECT SUM(bonus) FROM payroll LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "SUM(BONUS)",
+          "PAYROLL"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 1024,
+      "error": null
+    },
+    {
+      "id": 27,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the average base salary in payroll?",
+      "expected_sql": "SELECT AVG(base_salary) FROM payroll",
+      "generated_sql": "SELECT AVG(base_salary) FROM payroll LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "PAYROLL",
+          "AVG(BASE_SALARY)"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 732,
+      "error": null
+    },
+    {
+      "id": 28,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many attendance records are there for each status?",
+      "expected_sql": "SELECT status, COUNT(*) FROM attendance_logs GROUP BY status",
+      "generated_sql": "SELECT status, COUNT(id) FROM attendance_logs GROUP BY status LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 3,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.75,
+        "keywords_found": [
+          "ATTENDANCE_LOGS",
+          "STATUS,",
+          "STATUS"
+        ],
+        "keywords_missing": [
+          "COUNT(*)"
+        ]
+      },
+      "response_ms": 563,
+      "error": null
+    },
+    {
+      "id": 29,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show employee names with their department names",
+      "expected_sql": "SELECT e.name, d.name FROM employees e JOIN departments d ON e.department_id = d.id",
+      "generated_sql": "SELECT e.name, d.name FROM employees e JOIN departments d ON e.department_id = d.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 9,
+      "generated_data_count": 9,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "E.NAME,",
+          "EMPLOYEES",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID",
+          "D.NAME"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 481,
+      "error": null
+    },
+    {
+      "id": 30,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "List employees who work in the Engineering department",
+      "expected_sql": "SELECT e.* FROM employees e JOIN departments d ON e.department_id = d.id WHERE d.name = 'Engineering'",
+      "generated_sql": "SELECT e.name FROM employees e JOIN departments d ON e.department_id = d.id WHERE d.name = 'Engineering' LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 3,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.857,
+        "keywords_found": [
+          "EMPLOYEES",
+          "'ENGINEERING'",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID",
+          "D.NAME"
+        ],
+        "keywords_missing": [
+          "E.*"
+        ]
+      },
+      "response_ms": 744,
+      "error": null
+    },
+    {
+      "id": 31,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show employees and the projects they are working on",
+      "expected_sql": "SELECT e.name, p.project_name, ep.role FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id",
+      "generated_sql": "SELECT e.name, p.project_name FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 7,
+      "generated_data_count": 7,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.8,
+        "keywords_found": [
+          "EP.PROJECT_ID",
+          "E.NAME,",
+          "EMPLOYEES",
+          "E.ID",
+          "EP.EMPLOYEE_ID",
+          "PROJECTS",
+          "EMPLOYEE_PROJECTS",
+          "P.ID"
+        ],
+        "keywords_missing": [
+          "EP.ROLE",
+          "P.PROJECT_NAME,"
+        ]
+      },
+      "response_ms": 760,
+      "error": null
+    },
+    {
+      "id": 32,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "List all employees with their payroll details",
+      "expected_sql": "SELECT e.name, p.month_year, p.base_salary, p.bonus FROM employees e JOIN payroll p ON e.id = p.employee_id",
+      "generated_sql": "SELECT e.name, p.month_year, p.base_salary, p.bonus FROM employees e JOIN payroll p ON e.id = p.employee_id LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 30,
+      "generated_data_count": 30,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "E.NAME,",
+          "P.MONTH_YEAR,",
+          "P.BASE_SALARY,",
+          "EMPLOYEES",
+          "PAYROLL",
+          "E.ID",
+          "P.EMPLOYEE_ID",
+          "P.BONUS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 947,
+      "error": null
+    },
+    {
+      "id": 33,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show attendance records with employee names",
+      "expected_sql": "SELECT e.name, a.log_date, a.status FROM employees e JOIN attendance_logs a ON e.id = a.employee_id",
+      "generated_sql": "SELECT al.log_date, al.status, e.name FROM attendance_logs al JOIN employees e ON al.employee_id = e.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 32,
+      "generated_data_count": 32,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.429,
+        "keywords_found": [
+          "EMPLOYEES",
+          "E.ID",
+          "ATTENDANCE_LOGS"
+        ],
+        "keywords_missing": [
+          "E.NAME,",
+          "A.STATUS",
+          "A.EMPLOYEE_ID",
+          "A.LOG_DATE,"
+        ]
+      },
+      "response_ms": 921,
+      "error": null
+    },
+    {
+      "id": 34,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Which employees are working on the Website Redesign project?",
+      "expected_sql": "SELECT e.name, ep.role FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id WHERE p.project_name = 'Website Redesign'",
+      "generated_sql": "SELECT e.name FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id WHERE p.project_name = 'Website Redesign' LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 0,
+      "generated_data_count": 0,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.833,
+        "keywords_found": [
+          "EP.PROJECT_ID",
+          "'WEBSITE",
+          "EMPLOYEES",
+          "E.ID",
+          "EP.EMPLOYEE_ID",
+          "PROJECTS",
+          "EMPLOYEE_PROJECTS",
+          "REDESIGN'",
+          "P.ID",
+          "P.PROJECT_NAME"
+        ],
+        "keywords_missing": [
+          "E.NAME,",
+          "EP.ROLE"
+        ]
+      },
+      "response_ms": 478,
+      "error": null
+    },
+    {
+      "id": 35,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show the total budget of projects each employee is involved in",
+      "expected_sql": "SELECT e.name, SUM(p.budget) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id GROUP BY e.id",
+      "generated_sql": "SELECT e.name, SUM(p.budget) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id GROUP BY e.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "EP.PROJECT_ID",
+          "E.NAME,",
+          "EMPLOYEES",
+          "SUM(P.BUDGET)",
+          "E.ID",
+          "EP.EMPLOYEE_ID",
+          "PROJECTS",
+          "EMPLOYEE_PROJECTS",
+          "P.ID"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 771,
+      "error": null
+    },
+    {
+      "id": 36,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "List departments and how many employees each has",
+      "expected_sql": "SELECT d.name, COUNT(e.id) FROM departments d JOIN employees e ON d.id = e.department_id GROUP BY d.id",
+      "generated_sql": "SELECT d.name, COUNT(e.id) FROM departments d JOIN employees e ON d.id = e.department_id GROUP BY d.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "COUNT(E.ID)",
+          "EMPLOYEES",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID",
+          "D.NAME,"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 606,
+      "error": null
+    },
+    {
+      "id": 37,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show employees and their roles in projects",
+      "expected_sql": "SELECT e.name, p.project_name, ep.role FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id",
+      "generated_sql": "SELECT e.name, ep.role, p.project_name FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 7,
+      "generated_data_count": 7,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.9,
+        "keywords_found": [
+          "EP.PROJECT_ID",
+          "E.NAME,",
+          "EMPLOYEES",
+          "E.ID",
+          "EP.EMPLOYEE_ID",
+          "PROJECTS",
+          "EMPLOYEE_PROJECTS",
+          "EP.ROLE",
+          "P.ID"
+        ],
+        "keywords_missing": [
+          "P.PROJECT_NAME,"
+        ]
+      },
+      "response_ms": 568,
+      "error": null
+    },
+    {
+      "id": 38,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "What is the average salary by department name?",
+      "expected_sql": "SELECT d.name, AVG(e.salary) FROM departments d JOIN employees e ON d.id = e.department_id GROUP BY d.id",
+      "generated_sql": "SELECT d.name, AVG(p.base_salary) FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.833,
+        "keywords_found": [
+          "EMPLOYEES",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID",
+          "D.NAME,"
+        ],
+        "keywords_missing": [
+          "AVG(E.SALARY)"
+        ]
+      },
+      "response_ms": 576,
+      "error": null
+    },
+    {
+      "id": 39,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which employees work on more than one project?",
+      "expected_sql": "SELECT e.name, COUNT(ep.project_id) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id GROUP BY e.id HAVING COUNT(ep.project_id) > 1",
+      "generated_sql": "SELECT e.name, COUNT(ep.project_id) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id GROUP BY e.id HAVING COUNT(ep.project_id) > 1 LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "E.NAME,",
+          "COUNT(EP.PROJECT_ID)",
+          "EMPLOYEES",
+          "E.ID",
+          "EP.EMPLOYEE_ID",
+          "EMPLOYEE_PROJECTS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 666,
+      "error": null
+    },
+    {
+      "id": 40,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which department has the highest average salary?",
+      "expected_sql": "SELECT d.name, AVG(e.salary) as avg_salary FROM departments d JOIN employees e ON d.id = e.department_id GROUP BY d.id ORDER BY avg_salary DESC LIMIT 1",
+      "generated_sql": "SELECT d.name FROM employees e JOIN departments d ON e.department_id = d.id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id HAVING AVG(p.base_salary) = (SELECT MAX(avg_salary) FROM (SELECT AVG(p.base_salary) AS avg_salary FROM employees e JOIN payroll p ON e.id = p.employee_id GROUP BY e.department_id) AS subquery) LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.714,
+        "keywords_found": [
+          "EMPLOYEES",
+          "AVG_SALARY",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID"
+        ],
+        "keywords_missing": [
+          "AVG(E.SALARY)",
+          "D.NAME,"
+        ]
+      },
+      "response_ms": 848,
+      "error": null
+    },
+    {
+      "id": 41,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "List the top 3 highest paid employees",
+      "expected_sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
+      "generated_sql": "SELECT e.name, SUM(p.base_salary + p.bonus) AS total_salary FROM employees e JOIN payroll p ON e.id = p.employee_id GROUP BY e.id ORDER BY total_salary DESC LIMIT 3",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 3,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "SALARY",
+          "NAME,",
+          "EMPLOYEES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 644,
+      "error": null
+    },
+    {
+      "id": 42,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which employees have never been absent?",
+      "expected_sql": "SELECT e.name FROM employees e WHERE e.id NOT IN (SELECT employee_id FROM attendance_logs WHERE status = 'Absent')",
+      "generated_sql": "SELECT e.name FROM employees e LEFT JOIN attendance_logs a ON e.id = a.employee_id WHERE a.status != 'Absent' OR a.status IS NULL GROUP BY e.id HAVING COUNT(CASE WHEN a.status = 'Absent' THEN 1 END) = 0 LIMIT 100",
+      "execution_success": true,
+      "data_match": "partial_match",
+      "expected_data_count": 7,
+      "generated_data_count": 9,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.75,
+        "keywords_found": [
+          "EMPLOYEE_ID",
+          "EMPLOYEES",
+          "E.ID",
+          "ATTENDANCE_LOGS",
+          "E.NAME",
+          "STATUS"
+        ],
+        "keywords_missing": [
+          "(SELECT",
+          "'ABSENT')"
+        ]
+      },
+      "response_ms": 723,
+      "error": null
+    },
+    {
+      "id": 43,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "What is the total payroll cost per department?",
+      "expected_sql": "SELECT d.name, SUM(p.base_salary + p.bonus) FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id",
+      "generated_sql": "SELECT d.name, SUM(p.base_salary + p.bonus) FROM payroll p JOIN employees e ON p.employee_id = e.id JOIN departments d ON e.department_id = d.id GROUP BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "SUM(P.BASE_SALARY",
+          "EMPLOYEES",
+          "PAYROLL",
+          "E.ID",
+          "P.EMPLOYEE_ID",
+          "P.BONUS)",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID",
+          "D.NAME,"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 913,
+      "error": null
+    },
+    {
+      "id": 44,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which project has the most employees assigned to it?",
+      "expected_sql": "SELECT p.project_name, COUNT(ep.employee_id) as employee_count FROM projects p JOIN employee_projects ep ON p.id = ep.project_id GROUP BY p.id ORDER BY employee_count DESC LIMIT 1",
+      "generated_sql": "SELECT p.project_name, COUNT(ep.employee_id) FROM projects p JOIN employee_projects ep ON p.id = ep.project_id GROUP BY p.id HAVING COUNT(ep.employee_id) = (SELECT MAX(cnt) FROM (SELECT COUNT(employee_id) AS cnt FROM employee_projects GROUP BY project_id) AS sub) LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.857,
+        "keywords_found": [
+          "EP.PROJECT_ID",
+          "COUNT(EP.EMPLOYEE_ID)",
+          "PROJECTS",
+          "EMPLOYEE_PROJECTS",
+          "P.ID",
+          "P.PROJECT_NAME,"
+        ],
+        "keywords_missing": [
+          "EMPLOYEE_COUNT"
+        ]
+      },
+      "response_ms": 857,
+      "error": null
+    },
+    {
+      "id": 45,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Show departments where the average salary is above 6000",
+      "expected_sql": "SELECT d.name, AVG(e.salary) as avg_salary FROM departments d JOIN employees e ON d.id = e.department_id GROUP BY d.id HAVING AVG(e.salary) > 6000",
+      "generated_sql": "SELECT d.name FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id HAVING AVG(p.base_salary) > 6000 LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.625,
+        "keywords_found": [
+          "EMPLOYEES",
+          "6000",
+          "DEPARTMENTS",
+          "E.DEPARTMENT_ID",
+          "D.ID"
+        ],
+        "keywords_missing": [
+          "AVG_SALARY",
+          "AVG(E.SALARY)",
+          "D.NAME,"
+        ]
+      },
+      "response_ms": 618,
+      "error": null
+    },
+    {
+      "id": 46,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "List employees who have both Present and Absent attendance records",
+      "expected_sql": "SELECT e.name FROM employees e JOIN attendance_logs a ON e.id = a.employee_id WHERE a.status IN ('Present', 'Absent') GROUP BY e.id HAVING COUNT(DISTINCT a.status) = 2",
+      "generated_sql": "SELECT e.name FROM employees e JOIN attendance_logs al ON e.id = al.employee_id GROUP BY e.id HAVING COUNT(DISTINCT al.status) > 1 AND COUNT(CASE WHEN al.status = 'Present' THEN 1 END) > 0 AND COUNT(CASE WHEN al.status = 'Absent' THEN 1 END) > 0 LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 2,
+      "generated_data_count": 2,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.5,
+        "keywords_found": [
+          "EMPLOYEES",
+          "E.ID",
+          "COUNT(DISTINCT",
+          "ATTENDANCE_LOGS",
+          "E.NAME"
+        ],
+        "keywords_missing": [
+          "('PRESENT',",
+          "A.STATUS)",
+          "A.STATUS",
+          "A.EMPLOYEE_ID",
+          "'ABSENT')"
+        ]
+      },
+      "response_ms": 664,
+      "error": null
+    },
+    {
+      "id": 47,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Rank employees by salary within each department",
+      "expected_sql": "SELECT name, department_id, salary, RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) as rank FROM employees",
+      "generated_sql": "SELECT e.name, e.department_id, p.base_salary, DENSE_RANK() OVER (PARTITION BY e.department_id ORDER BY p.base_salary DESC) as salary_rank FROM employees e JOIN payroll p ON e.id = p.employee_id JOIN departments d ON e.department_id = d.id ORDER BY e.department_id, salary_rank LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 30,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "NAME,",
+          "DEPARTMENT_ID,",
+          "EMPLOYEES",
+          "SALARY",
+          "DESC)",
+          "SALARY,",
+          "RANK()",
+          "DEPARTMENT_ID",
+          "(PARTITION"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 855,
+      "error": null
+    },
+    {
+      "id": 48,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Show the running total of payroll by month",
+      "expected_sql": "SELECT month_year, base_salary + bonus as total, SUM(base_salary + bonus) OVER (ORDER BY month_year) as running_total FROM payroll",
+      "generated_sql": "SELECT month_year, SUM(base_salary + bonus) AS total_payroll FROM payroll GROUP BY month_year ORDER BY month_year LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 34,
+      "generated_data_count": 2,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.6,
+        "keywords_found": [
+          "MONTH_YEAR,",
+          "PAYROLL",
+          "BONUS)",
+          "BASE_SALARY",
+          "SUM(BASE_SALARY",
+          "BONUS"
+        ],
+        "keywords_missing": [
+          "(ORDER",
+          "RUNNING_TOTAL",
+          "MONTH_YEAR)",
+          "TOTAL,"
+        ]
+      },
+      "response_ms": 1251,
+      "error": null
+    },
+    {
+      "id": 49,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Find the highest paid employee in each department using a subquery",
+      "expected_sql": "SELECT e.name, e.salary, e.department_id FROM employees e WHERE e.salary = (SELECT MAX(e2.salary) FROM employees e2 WHERE e2.department_id = e.department_id)",
+      "generated_sql": "SELECT e.name, p.base_salary FROM employees e JOIN payroll p ON e.id = p.employee_id WHERE (e.department_id, p.base_salary) IN ( SELECT e.department_id, MAX(p.base_salary) FROM employees e JOIN payroll p ON e.id = p.employee_id GROUP BY e.department_id ) LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 19,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.333,
+        "keywords_found": [
+          "E.NAME,",
+          "EMPLOYEES",
+          "E.DEPARTMENT_ID"
+        ],
+        "keywords_missing": [
+          "(SELECT",
+          "E.SALARY,",
+          "MAX(E2.SALARY)",
+          "E.DEPARTMENT_ID)",
+          "E.SALARY",
+          "E2.DEPARTMENT_ID"
+        ]
+      },
+      "response_ms": 879,
+      "error": null
+    },
+    {
+      "id": 50,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Show department budgets compared to their total employee salaries using a CTE",
+      "expected_sql": "WITH dept_salary AS (SELECT department_id, SUM(salary) as total_salary FROM employees GROUP BY department_id) SELECT d.name, d.budget, ds.total_salary FROM departments d JOIN dept_salary ds ON d.id = ds.department_id",
+      "generated_sql": "WITH department_budgets AS ( SELECT d.id, d.name, SUM(p.budget) AS total_budget FROM departments d JOIN employee_projects ep ON d.id = (SELECT department_id FROM employees WHERE id = ep.employee_id) JOIN projects p ON ep.project_id = p.id GROUP BY d.id, d.name ), total_salaries AS ( SELECT d.id, d.name, SUM(p.base_salary) AS total_salary FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id, d.name ) SELECT db.name, db.total_budget, ts.total_salary FROM department_budgets db JOIN total_salaries ts ON db.id = ts.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 4,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.462,
+        "keywords_found": [
+          "(SELECT",
+          "EMPLOYEES",
+          "DEPARTMENTS",
+          "TOTAL_SALARY",
+          "D.NAME,",
+          "D.ID"
+        ],
+        "keywords_missing": [
+          "D.BUDGET,",
+          "DEPT_SALARY",
+          "DS.TOTAL_SALARY",
+          "DEPARTMENT_ID,",
+          "DS.DEPARTMENT_ID",
+          "SUM(SALARY)",
+          "DEPARTMENT_ID)"
+        ]
+      },
+      "response_ms": 3971,
+      "error": null
+    }
+  ]
+}

@@ -350,7 +350,85 @@ func main() {
 		c.JSON(http.StatusOK, result)
 	})
 
-	// 7. Endpoint Utama
+	// 7. Benchmark Execute Endpoint — untuk evaluasi expected SQL
+	type BenchmarkExecuteRequest struct {
+		SQL string `json:"sql" binding:"required"`
+	}
+
+	r.POST("/benchmark/execute", func(c *gin.Context) {
+		var req BenchmarkExecuteRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Format JSON tidak valid atau sql kosong"})
+			return
+		}
+
+		query := cleanSQLQuery(req.SQL)
+
+		// Validasi read-only
+		if !isReadOnlySQL(query) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Query ditolak: hanya SELECT yang diizinkan",
+				"data":  []map[string]interface{}{},
+			})
+			return
+		}
+
+		query = ensureLimit(query, 100)
+
+		rows, err := db.Query(query)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"data":  []map[string]interface{}{},
+				"error": err.Error(),
+			})
+			return
+		}
+		defer rows.Close()
+
+		cols, err := rows.Columns()
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"data":  []map[string]interface{}{},
+				"error": err.Error(),
+			})
+			return
+		}
+
+		var result []map[string]interface{}
+		for rows.Next() {
+			columns := make([]interface{}, len(cols))
+			columnPointers := make([]interface{}, len(cols))
+			for i := range columns {
+				columnPointers[i] = &columns[i]
+			}
+
+			if err := rows.Scan(columnPointers...); err != nil {
+				continue
+			}
+
+			rowData := make(map[string]interface{})
+			for i, colName := range cols {
+				val := columnPointers[i].(*interface{})
+				if b, ok := (*val).([]byte); ok {
+					rowData[colName] = string(b)
+				} else {
+					rowData[colName] = *val
+				}
+			}
+			result = append(result, rowData)
+		}
+
+		if result == nil {
+			result = []map[string]interface{}{}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"data":  result,
+			"error": nil,
+		})
+	})
+
+	// 8. Endpoint Utama
 	r.POST("/ask", func(c *gin.Context) {
 		startTime := time.Now()
 

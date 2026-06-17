@@ -4,6 +4,7 @@ import os
 import httpx
 import uvicorn
 import json
+import time
 from dotenv import load_dotenv
 
 # Load .env file dari direktori yang sama dengan app.py
@@ -95,7 +96,11 @@ def load_zeroshot_model():
 
 # --- LOAD: Mode Groq (API Cloud, tanpa model lokal) ---
 def call_groq_api(messages: list) -> str:
-    """Mengirim request ke Groq API dan mengembalikan response."""
+    """Mengirim request ke Groq API dan mengembalikan response.
+    
+    Dilengkapi retry logic dengan exponential backoff untuk menangani
+    rate limit (HTTP 429) dari Groq API.
+    """
     api_key = os.getenv("GROQ_API_KEY")
     model_name = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
@@ -115,11 +120,37 @@ def call_groq_api(messages: list) -> str:
         "top_p": 1,
     }
 
-    resp = httpx.post(GROQ_API_URL, json=payload, headers=headers, timeout=30)
-    resp.raise_for_status()
+    max_retries = 3
+    for attempt in range(max_retries):
+        resp = httpx.post(GROQ_API_URL, json=payload, headers=headers, timeout=30)
 
-    data = resp.json()
-    return data["choices"][0]["message"]["content"].strip()
+        if resp.status_code == 429:
+            # Rate limit hit — extract retry-after or use exponential backoff
+            retry_after_header = resp.headers.get("retry-after")
+            if retry_after_header:
+                wait_time = float(retry_after_header)
+            else:
+                wait_time = 2 ** attempt  # 1s, 2s, 4s
+            
+            print(f"[Groq Rate Limit] Attempt {attempt + 1}/{max_retries} - Waiting {wait_time:.1f}s before retry...")
+            
+            if attempt < max_retries - 1:
+                time.sleep(wait_time)
+                continue
+            else:
+                # Last attempt — raise error
+                raise Exception(
+                    f"Groq API rate limit exceeded after {max_retries} retries. "
+                    f"Last status: {resp.status_code}, body: {resp.text[:200]}"
+                )
+
+        # Non-429 errors — raise immediately
+        resp.raise_for_status()
+
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
+
+    raise Exception(f"Groq API failed after {max_retries} retries")
 
 
 # --- EVENT STARTUP: MEMUAT MODEL ---

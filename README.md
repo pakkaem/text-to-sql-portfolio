@@ -14,7 +14,7 @@ Proyek ini mengadopsi arsitektur *microservices* sederhana:
 |-------|-----------|-----------|
 | **Layanan AI** | Python / FastAPI | Bertindak sebagai "otak" sistem. Mendukung **3 mode inference**: **Groq API** (default, cloud), **Zero-Shot** (model lokal), dan **LoRA Fine-tuned** (model lokal + adapter). Mode dipilih via environment variable tanpa ubah kode. |
 | **Layanan Backend** | Golang / Gin | Bertindak sebagai "jembatan" utama. Menerima request HTTP dari pengguna, membaca **DDL schema secara dinamis** dari sqlite_master, meminta query SQL dari layanan AI, melakukan validasi keamanan, dan mengeksekusi query ke database. Dilengkapi **retry logic** otomatis jika query gagal. |
-| **Frontend** | SvelteKit 2 / Svelte 5 | UI interaktif dengan input pertanyaan dan tampilan hasil dalam bentuk tabel HTML dinamis. |
+| **Frontend** | SvelteKit 2 / Svelte 5 | UI interaktif dengan fitur **Dark Mode**, **Schema Explorer**, **Query History**, **Pagination**, **Export CSV**, dan **SQL Explanation**. |
 | **Database** | SQLite | Penyimpanan data terintegrasi (No-Ops) yang dibuat otomatis beserta *dummy data* saat aplikasi pertama kali dijalankan. |
 
 ### Alur Data
@@ -37,6 +37,39 @@ User → Frontend (SvelteKit :5173) → Backend (Go/Gin :8080) → AI Service (F
                                                                       ▼
                                                             Response → User (tabel)
 ```
+
+---
+
+## ✨ Fitur Utama
+
+### Fitur Inti (Essential)
+| Fitur | Deskripsi |
+|-------|-----------|
+| **Text-to-SQL** | Konversi pertanyaan bahasa natural ke SQL menggunakan AI |
+| **SQL Execution & Display** | Eksekusi query otomatis dan tampilkan hasil dalam tabel |
+| **Error Handling & Retry** | Retry otomatis jika SQL pertama gagal, dengan error feedback ke AI |
+| **SQL Validation** | Hanya SELECT/WITH yang diizinkan (read-only) |
+| **Auto LIMIT** | Tambahkan LIMIT 100 otomatis mencegah result set berlebihan |
+| **Skeleton Loading** | Animasi loading shimmer saat menunggu response |
+
+### Fitur Medium
+| Fitur | Lokasi | Deskripsi |
+|-------|--------|-----------|
+| **⚡ Response Time** | Frontend + Backend | Badge waktu eksekusi query (ms) ditampilkan di SQL box dan footer tabel |
+| **🗄️ Schema Explorer** | Frontend + Backend | Sidebar interaktif yang menampilkan semua tabel, kolom, tipe data, dan primary key dari database secara real-time (via `GET /schema`) |
+| **📄 Pagination** | Frontend | Tabel dibagi per 20 baris dengan navigasi halaman (Prev/Next + nomor halaman) |
+| **🌙 Dark Mode** | Frontend | Toggle dark/light mode di header, menggunakan CSS custom properties, preferensi disimpan di localStorage |
+| **🩺 Health Status** | Frontend + Backend | 2 indikator dot hijau/merah di header menampilkan status koneksi Backend DB dan AI Service (via `GET /health`) |
+
+### Fitur Tambahan
+| Fitur | Lokasi | Deskripsi |
+|-------|--------|-----------|
+| **💡 Suggested Questions** | Frontend | 6 contoh pertanyaan dalam bentuk chip yang bisa diklik langsung |
+| **📜 Query History** | Frontend | Riwayat 20 query terakhir disimpan di localStorage, bisa di-load ulang atau dihapus |
+| **📥 Export CSV** | Frontend | Download hasil query dalam format CSV |
+| **📖 SQL Explanation** | Frontend + Backend | Penjelasan natural language dari SQL yang di-generate oleh AI (via `POST /explain`) |
+| **📋 Copy SQL** | Frontend | Tombol copy generated SQL ke clipboard |
+| **⌨️ Typing Animation** | Frontend | Efek mengetik saat SQL ditampilkan |
 
 ---
 
@@ -112,6 +145,29 @@ npm run dev
 
 ---
 
+## 🌐 API Endpoints
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `POST` | `/ask` | **Endpoint utama.** Kirim pertanyaan, dapatkan SQL + hasil query + response time |
+| `GET` | `/health` | Health check — status koneksi DB dan AI Service |
+| `GET` | `/schema` | Struktur database — daftar tabel, kolom, tipe data, primary key |
+| `POST` | `/explain` | Penjelasan natural language dari SQL query |
+
+### Contoh Response `/ask`
+
+```json
+{
+  "question": "How many employees are in the Engineering department?",
+  "generated_sql": "SELECT COUNT(*) FROM employees WHERE department_id = 1 LIMIT 100",
+  "data": [{ "COUNT(*)": 2 }],
+  "response_time": "1250ms",
+  "response_ms": 1250
+}
+```
+
+---
+
 ## ⚙️ Environment Variables
 
 ### AI Service (`ai-service/.env`)
@@ -150,32 +206,6 @@ npm run dev
 
 ---
 
-## 🧪 Contoh Penggunaan (cURL)
-
-**Request:**
-
-```bash
-curl -X POST http://localhost:8080/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "How many employees are in the Engineering department?"}'
-```
-
-**Response:**
-
-```json
-{
-  "data": [
-    {
-      "COUNT(*)": 2
-    }
-  ],
-  "generated_sql": "SELECT COUNT(*) FROM employees WHERE department_id = 1 LIMIT 100",
-  "question": "How many employees are in the Engineering department?"
-}
-```
-
----
-
 ## 📁 Struktur Database (6 Tabel HRIS)
 
 | Tabel | Kolom Utama |
@@ -194,26 +224,85 @@ curl -X POST http://localhost:8080/ask \
 ```
 text-to-sql-portfolio/
 ├── ai-service/                  # AI Inference Service (Python/FastAPI)
-│   ├── app.py                   # Entry point: model loading & /generate-sql endpoint
+│   ├── app.py                   # Entry point: model loading, /generate-sql, /explain-sql
 │   ├── requirements.txt         # Python dependencies (core + optional)
 │   ├── .env                     # Konfigurasi (tidak di-commit)
 │   └── .env.example             # Template .env
 │
 ├── backend-service/             # API Gateway (Go/Gin)
-│   ├── main.go                  # Entry point: HTTP server, routing, retry logic
-│   ├── database.go              # SQLite init, seed data, dynamic SQL scanner
+│   ├── main.go                  # Entry point: HTTP server, routing, /ask, /health, /schema, /explain
+│   ├── database.go              # SQLite init, seed data
 │   ├── run_seed.py              # Script seed data
+│   ├── .env                     # Konfigurasi (tidak di-commit)
 │   └── go.mod / go.sum          # Go dependencies
 │
 ├── frontend-service/            # UI (SvelteKit 2 / Svelte 5)
 │   ├── src/
 │   │   ├── routes/
-│   │   │   ├── +page.svelte     # Main page
-│   │   │   └── +layout.svelte
+│   │   │   └── +page.svelte     # Main page (all features in single file)
 │   │   └── app.html
 │   ├── package.json
 │   ├── svelte.config.js
 │   └── vite.config.js
 │
+├── benchmark/                   # Evaluation Benchmark Suite
+│   ├── benchmark.json           # 50 pertanyaan evaluasi + expected SQL
+│   ├── run_benchmark.py         # Script eksekusi benchmark otomatis
+│   └── README.md                # Template & dokumentasi hasil
+│
 ├── README.md
 └── .gitignore
+```
+
+---
+
+## 📊 Evaluation Benchmark
+
+Proyek ini dilengkapi dengan **benchmark suite** otomatis untuk mengukur akurasi Text-to-SQL secara kuantitatif.
+
+### Menjalankan Benchmark
+
+```bash
+# Pastikan semua service sudah running (ai-service :8000, backend :8080)
+cd benchmark
+python run_benchmark.py
+
+# Opsi tambahan
+python run_benchmark.py --backend-url http://localhost:8080 --timeout 120
+```
+
+### Benchmark Structure
+
+| Kategori | Jumlah | Difficulty | Deskripsi |
+|----------|--------|------------|-----------|
+| `simple_select` | 10 | Easy | Basic SELECT, COUNT, DISTINCT |
+| `filter_where` | 8 | Easy | WHERE clauses, comparisons, LIKE |
+| `aggregation` | 10 | Medium | GROUP BY, SUM, AVG, MAX, MIN |
+| `join` | 10 | Medium | Single & multi-table JOINs |
+| `complex` | 7 | Hard | HAVING, subqueries, ORDER BY + LIMIT |
+| `advanced` | 5 | Hard | Window functions, CTEs, correlated subqueries |
+
+**Total: 50 pertanyaan evaluasi**
+
+### Metrics
+
+| Metrik | Deskripsi |
+|--------|-----------|
+| **Execution Accuracy** | % query yang bisa dieksekusi tanpa error |
+| **Result Accuracy** | % query yang menghasilkan SQL sesuai expected (≥70% keyword match) |
+| **Exact Match** | % query yang SQL-nya persis sama dengan expected |
+| **Avg Response Time** | Rata-rata waktu response |
+
+> Hasil benchmark tersimpan di `benchmark/results.json`. Detail lengkap: [benchmark/README.md](benchmark/README.md)
+
+---
+
+## 🎨 Screenshots
+
+
+
+---
+
+## 📄 License
+
+This project is open source and available for portfolio/educational purposes.
