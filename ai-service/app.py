@@ -392,5 +392,70 @@ Berikan HANYA query SQL."""
         {"role": "user", "content": user_msg},
     ]
 
+# --- ENDPOINT: EXPLAIN SQL ---
+class ExplainRequest(BaseModel):
+    sql: str
+    question: str = ""
+
+class ExplainResponse(BaseModel):
+    explanation: str
+
+@app.post("/explain-sql", response_model=ExplainResponse)
+async def explain_sql(request: ExplainRequest):
+    """Menjelaskan SQL query dalam bahasa natural (Bahasa Indonesia)."""
+    try:
+        system_msg = "Kamu adalah guru database. Jelaskan query SQL berikut dengan bahasa yang mudah dipahami oleh non-programmer, dalam Bahasa Indonesia. Jelaskan apa yang dilakukan query, tabel apa saja yang dipakai, dan apa hasilnya. Maksimal 3-4 kalimat."
+
+        user_msg = f"""Jelaskan query SQL ini dalam Bahasa Indonesia:
+
+```sql
+{request.sql}
+```
+
+{"Pertanyaan asli: " + request.question if request.question else ""}
+
+Jelaskan dengan singkat dan jelas."""
+
+        if model_mode == "groq":
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ]
+            explanation = call_groq_api(messages)
+            return ExplainResponse(explanation=explanation)
+        else:
+            # Untuk mode lokal, gunakan model yang sama
+            if not model or not tokenizer:
+                raise HTTPException(status_code=500, detail="Model belum siap diload.")
+
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ]
+
+            if hasattr(tokenizer, "apply_chat_template"):
+                prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            else:
+                prompt = f"<s>[INST] <<SYS>>\n{system_msg}\n<</SYS>>\n\n{user_msg} [/INST]\n"
+
+            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=300,
+                    temperature=0.3,
+                    do_sample=True,
+                    pad_token_id=tokenizer.eos_token_id
+                )
+            new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+            explanation = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+            return ExplainResponse(explanation=explanation)
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail=f"Groq API error: {e.response.status_code}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal menjelaskan SQL: {str(e)}")
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

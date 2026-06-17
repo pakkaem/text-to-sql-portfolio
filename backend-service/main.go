@@ -254,7 +254,47 @@ func main() {
 		})
 	})
 
-	// 5. Endpoint Utama
+	// 5. Endpoint: Explain SQL
+	type ExplainRequest struct {
+		SQL      string `json:"sql" binding:"required"`
+		Question string `json:"question"`
+	}
+
+	r.POST("/explain", func(c *gin.Context) {
+		var req ExplainRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Format JSON tidak valid atau sql kosong"})
+			return
+		}
+
+		explainReqBody := map[string]string{
+			"sql":       req.SQL,
+			"question":  req.Question,
+		}
+
+		jsonData, _ := json.Marshal(explainReqBody)
+		aiResp, err := http.Post(aiServiceURL+"/explain-sql", "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "Gagal terhubung ke AI Service"})
+			return
+		}
+		defer aiResp.Body.Close()
+
+		bodyBytes, _ := io.ReadAll(aiResp.Body)
+		if aiResp.StatusCode != 200 {
+			c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("AI Service error (status %d)", aiResp.StatusCode)})
+			return
+		}
+
+		var result map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &result); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal parse response AI"})
+			return
+		}
+		c.JSON(http.StatusOK, result)
+	})
+
+	// 6. Endpoint Utama
 	r.POST("/ask", func(c *gin.Context) {
 		var req AskRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
