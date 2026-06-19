@@ -15,6 +15,7 @@ backend-service/backend
 backend-service/backend.exe
 
 backend-service/hris.db
+backend-service/smartcity.db
 backend-service/*.db-journal
 
 # --- Seed Data (Sensitive) ---
