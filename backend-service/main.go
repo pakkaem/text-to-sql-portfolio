@@ -19,12 +19,14 @@ import (
 // Struktur request dari User/Frontend
 type AskRequest struct {
 	Question string `json:"question" binding:"required"`
+	Domain   string `json:"domain"`
 }
 
 // Struktur request yang akan dikirim ke AI Python
 type AIRequest struct {
 	SchemaContext string `json:"schema_context"`
 	Question      string `json:"question"`
+	Domain        string `json:"domain"`
 }
 
 // Struktur response dari AI Python
@@ -38,15 +40,15 @@ type AIRetryRequest struct {
 	Question      string `json:"question"`
 	PrevSQL       string `json:"prev_sql"`
 	ErrorMsg      string `json:"error_msg"`
+	Domain        string `json:"domain"`
 }
 
 // getSchemaFromDB membaca DDL aktual dari sqlite_master agar AI mendapat schema yang 100% akurat
-// termasuk FOREIGN KEY, CHECK constraints, dan kolom terbaru
 func getSchemaFromDB(db *sql.DB) string {
 	rows, err := db.Query("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
 	if err != nil {
-		log.Printf("WARNING: Gagal membaca schema dari database: %v. Menggunakan fallback.", err)
-		return hrisSchemaFallback
+		log.Printf("WARNING: Gagal membaca schema dari database: %v", err)
+		return ""
 	}
 	defer rows.Close()
 
@@ -62,22 +64,8 @@ func getSchemaFromDB(db *sql.DB) string {
 	}
 
 	schema := strings.TrimSpace(schemaBuilder.String())
-	if schema == "" {
-		log.Println("WARNING: Schema kosong dari database. Menggunakan fallback.")
-		return hrisSchemaFallback
-	}
 	return schema
 }
-
-// Fallback schema jika gagal baca dari database
-const hrisSchemaFallback = `
-CREATE TABLE departments (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);
-CREATE TABLE employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, department_id INTEGER, job_title TEXT, hire_date TEXT NOT NULL);
-CREATE TABLE attendance_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, employee_id INTEGER, log_date TEXT NOT NULL, status TEXT);
-CREATE TABLE payroll (id INTEGER PRIMARY KEY AUTOINCREMENT, employee_id INTEGER, month_year TEXT NOT NULL, base_salary REAL NOT NULL, bonus REAL DEFAULT 0);
-CREATE TABLE projects (id INTEGER PRIMARY KEY AUTOINCREMENT, project_name TEXT NOT NULL, budget REAL NOT NULL, status TEXT);
-CREATE TABLE employee_projects (employee_id INTEGER, project_id INTEGER, role TEXT NOT NULL, PRIMARY KEY (employee_id, project_id));
-`
 
 // isReadOnlySQL memvalidasi bahwa query hanya berupa SELECT statement (read-only)
 func isReadOnlySQL(query string) bool {
@@ -87,14 +75,9 @@ func isReadOnlySQL(query string) bool {
 }
 
 // cleanSQLQuery membersihkan output model AI dari noise
-// - Ambil hanya baris pertama yang valid sebagai SQL
-// - Hapus komentar, baris kosong, dan teks non-SQL setelah titik koma pertama
-// - Pastikan query berakhir dengan benar
 func cleanSQLQuery(query string) string {
-	// Bersihkan whitespace
 	query = strings.TrimSpace(query)
 
-	// Jika ada multiple lines, ambil hanya baris pertama yang mengandung SQL
 	lines := strings.Split(query, "\n")
 	var sqlLines []string
 	for _, line := range lines {
@@ -102,7 +85,6 @@ func cleanSQLQuery(query string) string {
 		if line == "" || strings.HasPrefix(line, "--") {
 			continue
 		}
-		// Hentikan jika baris terlihat bukan SQL (misal: penjelasan model setelah query)
 		if strings.HasPrefix(strings.ToUpper(line), "THE ") ||
 			strings.HasPrefix(strings.ToUpper(line), "THIS ") ||
 			strings.HasPrefix(strings.ToUpper(line), "HERE ") ||
@@ -113,11 +95,8 @@ func cleanSQLQuery(query string) string {
 	}
 	query = strings.Join(sqlLines, " ")
 
-	// Hapus trailing karakter yang tidak valid
 	query = strings.TrimRight(query, ";")
 
-	// Hapus trailing duplikasi kata (model kecil kadang mengulang)
-	// Cek apakah query berakhir dengan klausa yang tidak lengkap
 	upper := strings.ToUpper(query)
 	incompleteSuffixes := []string{
 		" ON", " AND", " OR", " WHERE", " JOIN", " FROM", " SET",
@@ -125,7 +104,6 @@ func cleanSQLQuery(query string) string {
 	}
 	for _, suffix := range incompleteSuffixes {
 		if strings.HasSuffix(upper, suffix) {
-			// Potong suffix yang tidak lengkap
 			query = strings.TrimRight(query[:len(query)-len(suffix)], " ")
 			upper = strings.ToUpper(query)
 		}
@@ -135,20 +113,16 @@ func cleanSQLQuery(query string) string {
 }
 
 // ensureLimit menambahkan LIMIT jika query tidak memiliki LIMIT clause
-// Hanya ditambahkan jika query valid (dimulai dengan SELECT dan tidak terpotong)
 func ensureLimit(query string, maxRows int) string {
 	query = strings.TrimSpace(query)
 	upper := strings.ToUpper(query)
 
-	// Validasi dasar: query harus dimulai dengan SELECT/WITH dan cukup panjang
 	if !strings.HasPrefix(upper, "SELECT") && !strings.HasPrefix(upper, "WITH") {
 		return query
 	}
 
-	// Cek apakah query terlihat terpotong (terlalu pendek atau tidak lengkap)
-	// Minimal query SELECT yang valid: "SELECT x FROM y" = ~17 chars
 	if len(query) < 15 {
-		return query // Jangan tambahkan LIMIT ke query yang jelas terpotong
+		return query
 	}
 
 	if !strings.Contains(upper, " LIMIT ") {
@@ -197,21 +171,73 @@ func callAIService(aiServiceURL string, reqBody interface{}) (string, error) {
 	return strings.TrimSpace(aiResult.SQLQuery), nil
 }
 
+// executeQueryOnDomain menjalankan query SQL pada database domain tertentu
+func executeQueryOnDomain(domainInfo *DomainInfo, query string) ([]map[string]interface{}, error) {
+	query = cleanSQLQuery(query)
+
+	if !isReadOnlySQL(query) {
+		return nil, fmt.Errorf("query ditolak: hanya SELECT yang diizinkan")
+	}
+
+	query = ensureLimit(query, 100)
+
+	rows, err := domainInfo.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	var result []map[string]interface{}
+	for rows.Next() {
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i := range columns {
+			columnPointers[i] = &columns[i]
+		}
+
+		if err := rows.Scan(columnPointers...); err != nil {
+			continue
+		}
+
+		rowData := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			if b, ok := (*val).([]byte); ok {
+				rowData[colName] = string(b)
+			} else {
+				rowData[colName] = *val
+			}
+		}
+		result = append(result, rowData)
+	}
+
+	if result == nil {
+		result = []map[string]interface{}{}
+	}
+
+	return result, nil
+}
+
 func main() {
 	// 0. Baca konfigurasi dari environment variables (dengan default)
 	backendPort := getEnv("BACKEND_PORT", "8080")
 	aiServiceURL := getEnv("AI_SERVICE_URL", "http://127.0.0.1:8000")
 	corsOrigins := getEnv("CORS_ORIGINS", "*")
 
-	// 1. Inisialisasi Database (memanggil fungsi dari database.go)
-	db := initDB()
-	defer db.Close()
+	// 1. Inisialisasi Semua Database (multi-domain)
+	domains := initAllDatabases()
+	defer func() {
+		for _, d := range domains {
+			d.DB.Close()
+		}
+	}()
 
-	// 2. Baca schema aktual dari database (Fix: Dynamic Schema)
-	hrisSchema := getSchemaFromDB(db)
-	log.Printf("Schema berhasil dibaca dari database (%d karakter)", len(hrisSchema))
-
-	// 3. Setup Gin Router
+	// 2. Setup Gin Router
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(corsOrigins, ","),
@@ -221,16 +247,18 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 	}))
 
-	// 4. Health Check Endpoint
+	// 3. Health Check Endpoint — cek semua domain
 	r.GET("/health", func(c *gin.Context) {
-		if err := db.Ping(); err != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status": "unhealthy",
-				"db":     "disconnected",
-				"ai_url": aiServiceURL,
-				"error":  err.Error(),
-			})
-			return
+		dbStatuses := make(map[string]string)
+		allHealthy := true
+
+		for name, info := range domains {
+			if err := info.DB.Ping(); err != nil {
+				dbStatuses[name] = "disconnected"
+				allHealthy = false
+			} else {
+				dbStatuses[name] = "connected"
+			}
 		}
 
 		aiHealthy := false
@@ -242,24 +270,46 @@ func main() {
 
 		status := "healthy"
 		httpStatus := http.StatusOK
-		if !aiHealthy {
+		if !allHealthy || !aiHealthy {
 			status = "degraded"
 			httpStatus = http.StatusPartialContent
 		}
 
 		c.JSON(httpStatus, gin.H{
 			"status":     status,
-			"db":         "connected",
+			"databases":  dbStatuses,
 			"ai_service": aiHealthy,
 			"ai_url":     aiServiceURL,
 		})
 	})
 
-	// 5. Endpoint: Get Schema Info
+	// 4. Domains Endpoint — daftar semua domain yang tersedia
+	r.GET("/domains", func(c *gin.Context) {
+		type DomainMeta struct {
+			Name        string `json:"name"`
+			DisplayName string `json:"display_name"`
+			Description string `json:"description"`
+			TableCount  int    `json:"table_count"`
+		}
+
+		var domainList []DomainMeta
+		for _, info := range domains {
+			domainList = append(domainList, DomainMeta{
+				Name:        info.Name,
+				DisplayName: info.DisplayName,
+				Description: info.Description,
+				TableCount:  info.TableCount,
+			})
+		}
+
+		c.JSON(http.StatusOK, gin.H{"domains": domainList})
+	})
+
+	// 5. Endpoint: Get Schema Info (per domain)
 	type ColumnInfo struct {
-		Name string      `json:"name"`
-		Type string      `json:"type"`
-		PK   bool        `json:"pk"`
+		Name string `json:"name"`
+		Type string `json:"type"`
+		PK   bool   `json:"pk"`
 	}
 	type TableInfo struct {
 		Name    string       `json:"name"`
@@ -267,10 +317,16 @@ func main() {
 	}
 
 	r.GET("/schema", func(c *gin.Context) {
+		domainName := c.DefaultQuery("domain", "hris")
+		domainInfo, err := getDomainDB(domainName)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		tables := []TableInfo{}
 
-		// Get all table names
-		tblRows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+		tblRows, err := domainInfo.DB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca schema"})
 			return
@@ -283,8 +339,7 @@ func main() {
 				continue
 			}
 
-			// Get columns for this table
-			colRows, err := db.Query(fmt.Sprintf("PRAGMA table_info('%s')", tableName))
+			colRows, err := domainInfo.DB.Query(fmt.Sprintf("PRAGMA table_info('%s')", tableName))
 			if err != nil {
 				continue
 			}
@@ -303,17 +358,17 @@ func main() {
 			}
 			colRows.Close()
 
-			// Get row count
 			tables = append(tables, TableInfo{Name: tableName, Columns: cols})
 		}
 
-		c.JSON(http.StatusOK, gin.H{"tables": tables})
+		c.JSON(http.StatusOK, gin.H{"domain": domainName, "tables": tables})
 	})
 
-	// 6. Endpoint: Explain SQL
+	// 6. Endpoint: Explain SQL (per domain)
 	type ExplainRequest struct {
 		SQL      string `json:"sql" binding:"required"`
 		Question string `json:"question"`
+		Domain   string `json:"domain"`
 	}
 
 	r.POST("/explain", func(c *gin.Context) {
@@ -323,9 +378,14 @@ func main() {
 			return
 		}
 
+		if req.Domain == "" {
+			req.Domain = "hris"
+		}
+
 		explainReqBody := map[string]string{
-			"sql":       req.SQL,
-			"question":  req.Question,
+			"sql":      req.SQL,
+			"question": req.Question,
+			"domain":   req.Domain,
 		}
 
 		jsonData, _ := json.Marshal(explainReqBody)
@@ -350,9 +410,10 @@ func main() {
 		c.JSON(http.StatusOK, result)
 	})
 
-	// 7. Benchmark Execute Endpoint — untuk evaluasi expected SQL
+	// 7. Benchmark Execute Endpoint — untuk evaluasi expected SQL (per domain)
 	type BenchmarkExecuteRequest struct {
-		SQL string `json:"sql" binding:"required"`
+		SQL    string `json:"sql" binding:"required"`
+		Domain string `json:"domain"`
 	}
 
 	r.POST("/benchmark/execute", func(c *gin.Context) {
@@ -362,73 +423,34 @@ func main() {
 			return
 		}
 
-		query := cleanSQLQuery(req.SQL)
-
-		// Validasi read-only
-		if !isReadOnlySQL(query) {
-			c.JSON(http.StatusForbidden, gin.H{
-				"error": "Query ditolak: hanya SELECT yang diizinkan",
-				"data":  []map[string]interface{}{},
-			})
-			return
+		if req.Domain == "" {
+			req.Domain = "hris"
 		}
 
-		query = ensureLimit(query, 100)
-
-		rows, err := db.Query(query)
+		domainInfo, err := getDomainDB(req.Domain)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"data":  []map[string]interface{}{},
-				"error": err.Error(),
-			})
-			return
-		}
-		defer rows.Close()
-
-		cols, err := rows.Columns()
-		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"data":  []map[string]interface{}{},
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		var result []map[string]interface{}
-		for rows.Next() {
-			columns := make([]interface{}, len(cols))
-			columnPointers := make([]interface{}, len(cols))
-			for i := range columns {
-				columnPointers[i] = &columns[i]
-			}
-
-			if err := rows.Scan(columnPointers...); err != nil {
-				continue
-			}
-
-			rowData := make(map[string]interface{})
-			for i, colName := range cols {
-				val := columnPointers[i].(*interface{})
-				if b, ok := (*val).([]byte); ok {
-					rowData[colName] = string(b)
-				} else {
-					rowData[colName] = *val
-				}
-			}
-			result = append(result, rowData)
-		}
-
-		if result == nil {
-			result = []map[string]interface{}{}
+		result, queryErr := executeQueryOnDomain(domainInfo, req.SQL)
+		if queryErr != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"data":   []map[string]interface{}{},
+				"error":  queryErr.Error(),
+				"domain": req.Domain,
+			})
+			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"data":  result,
-			"error": nil,
+			"data":   result,
+			"error":  nil,
+			"domain": req.Domain,
 		})
 	})
 
-	// 8. Endpoint Utama
+	// 8. Endpoint Utama: /ask (per domain)
 	r.POST("/ask", func(c *gin.Context) {
 		startTime := time.Now()
 
@@ -438,10 +460,23 @@ func main() {
 			return
 		}
 
+		// Default domain
+		if req.Domain == "" {
+			req.Domain = "hris"
+		}
+
+		// Ambil domain info
+		domainInfo, err := getDomainDB(req.Domain)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		// --- FASE 1: BERTANYA KE AI PYTHON ---
 		aiReqBody := AIRequest{
-			SchemaContext: hrisSchema,
+			SchemaContext: domainInfo.Schema,
 			Question:      req.Question,
+			Domain:        req.Domain,
 		}
 
 		generatedSQL, err := callAIService(aiServiceURL, aiReqBody)
@@ -463,120 +498,79 @@ func main() {
 		if !isReadOnlySQL(generatedSQL) {
 			log.Printf("WARNING: AI menghasilkan non-SELECT query: %s", generatedSQL)
 			c.JSON(http.StatusForbidden, gin.H{
-				"error":          "Query ditolak: hanya SELECT yang diizinkan",
+				"error":         "Query ditolak: hanya SELECT yang diizinkan",
 				"generated_sql": generatedSQL,
 			})
 			return
 		}
 
-		// --- FASE 2: EKSEKUSI SQL KE DATABASE (DYNAMIC SCANNING) ---
-		// Tambahkan LIMIT otomatis jika tidak ada (mencegah result set berlebihan)
+		// --- FASE 2: EKSEKUSI SQL KE DATABASE DOMAIN ---
 		generatedSQL = ensureLimit(generatedSQL, 100)
 
-		rows, err := db.Query(generatedSQL)
+		finalResult, queryErr := executeQueryOnDomain(domainInfo, generatedSQL)
 
 		// --- RETRY LOGIC: Jika gagal, minta AI perbaiki query ---
-		if err != nil {
-			log.Printf("WARNING: SQL pertama gagal: %s | Error: %v. Mencoba retry...", generatedSQL, err)
+		if queryErr != nil {
+			log.Printf("WARNING: SQL pertama gagal: %s | Error: %v. Mencoba retry...", generatedSQL, queryErr)
 
 			retryReq := AIRetryRequest{
-				SchemaContext: hrisSchema,
+				SchemaContext: domainInfo.Schema,
 				Question:      req.Question,
 				PrevSQL:       generatedSQL,
-				ErrorMsg:      err.Error(),
+				ErrorMsg:      queryErr.Error(),
+				Domain:        req.Domain,
 			}
 
 			retrySQL, retryErr := callAIService(aiServiceURL, retryReq)
 			if retryErr != nil {
 				log.Printf("ERROR: Retry juga gagal: %v", retryErr)
 				c.JSON(http.StatusBadRequest, gin.H{
-					"error":          "AI menghasilkan SQL yang tidak valid (retry gagal)",
+					"error":         "AI menghasilkan SQL yang tidak valid (retry gagal)",
 					"generated_sql": generatedSQL,
-					"db_message":     err.Error(),
-				})
-				return
-			}
-
-			if !isReadOnlySQL(retrySQL) {
-				log.Printf("WARNING: AI retry menghasilkan non-SELECT query: %s", retrySQL)
-				c.JSON(http.StatusForbidden, gin.H{
-					"error":          "Query ditolak: hanya SELECT yang diizinkan (setelah retry)",
-					"generated_sql": retrySQL,
+					"db_message":    queryErr.Error(),
 				})
 				return
 			}
 
 			retrySQL = cleanSQLQuery(retrySQL)
-			retrySQL = ensureLimit(retrySQL, 100)
-			rows, err = db.Query(retrySQL)
-			if err != nil {
-				log.Printf("ERROR: Retry SQL juga gagal dieksekusi: %s | Error: %v", retrySQL, err)
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error":          "AI menghasilkan SQL yang tidak valid (setelah retry)",
+			if !isReadOnlySQL(retrySQL) {
+				log.Printf("WARNING: AI retry menghasilkan non-SELECT query: %s", retrySQL)
+				c.JSON(http.StatusForbidden, gin.H{
+					"error":         "Query ditolak: hanya SELECT yang diizinkan (setelah retry)",
 					"generated_sql": retrySQL,
-					"original_sql":   generatedSQL,
-					"db_message":     err.Error(),
 				})
 				return
 			}
-			generatedSQL = retrySQL // Update generated SQL untuk response
-		}
-		defer rows.Close()
 
-		// Ambil nama-nama kolom dari hasil query
-		cols, err := rows.Columns()
-		if err != nil {
-			log.Printf("ERROR: Gagal mengambil kolom: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca struktur hasil query"})
-			return
-		}
-
-		var finalResult []map[string]interface{}
-
-		for rows.Next() {
-			columns := make([]interface{}, len(cols))
-			columnPointers := make([]interface{}, len(cols))
-			for i := range columns {
-				columnPointers[i] = &columns[i]
+			retrySQL = ensureLimit(retrySQL, 100)
+			finalResult, queryErr = executeQueryOnDomain(domainInfo, retrySQL)
+			if queryErr != nil {
+				log.Printf("ERROR: Retry SQL juga gagal dieksekusi: %s | Error: %v", retrySQL, queryErr)
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":         "AI menghasilkan SQL yang tidak valid (setelah retry)",
+					"generated_sql": retrySQL,
+					"original_sql":  generatedSQL,
+					"db_message":    queryErr.Error(),
+				})
+				return
 			}
-
-			if err := rows.Scan(columnPointers...); err != nil {
-				log.Printf("WARNING: Gagal scan row: %v", err)
-				continue
-			}
-
-			rowData := make(map[string]interface{})
-			for i, colName := range cols {
-				val := columnPointers[i].(*interface{})
-				if b, ok := (*val).([]byte); ok {
-					rowData[colName] = string(b)
-				} else {
-					rowData[colName] = *val
-				}
-			}
-			finalResult = append(finalResult, rowData)
-		}
-
-		if err := rows.Err(); err != nil {
-			log.Printf("WARNING: Error saat iterasi rows: %v", err)
-		}
-
-		if finalResult == nil {
-			finalResult = []map[string]interface{}{}
+			generatedSQL = retrySQL
 		}
 
 		// --- FASE 3: KEMBALIKAN HASIL KE USER ---
 		elapsed := time.Since(startTime)
 		c.JSON(http.StatusOK, gin.H{
-			"question":       req.Question,
-			"generated_sql":  generatedSQL,
-			"data":           finalResult,
-			"response_time":  fmt.Sprintf("%.0fms", float64(elapsed.Milliseconds())),
-			"response_ms":    elapsed.Milliseconds(),
+			"question":      req.Question,
+			"domain":        req.Domain,
+			"generated_sql": generatedSQL,
+			"data":          finalResult,
+			"response_time": fmt.Sprintf("%.0fms", float64(elapsed.Milliseconds())),
+			"response_ms":   elapsed.Milliseconds(),
 		})
 	})
 
 	log.Printf("Backend Golang berjalan di http://localhost:%s", backendPort)
 	log.Printf("AI Service URL: %s", aiServiceURL)
+	log.Printf("Domains terdaftar: %d", len(domains))
 	r.Run(":" + backendPort)
 }
