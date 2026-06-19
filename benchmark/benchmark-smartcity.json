@@ -1,0 +1,252 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "total_questions": 30,
+    "schema": "Smart City (9 tables: districts, zones, camera_locations, roads, traffic_readings, violations, weather_data, incidents, infrastructure_projects)",
+    "created": "2026-06-17",
+    "domain": "smartcity",
+    "notes": "Expected SQL uses column names from the actual Smart City database schema."
+  },
+  "questions": [
+    {
+      "id": 1,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all districts",
+      "expected_sql": "SELECT * FROM districts",
+      "description": "Basic SELECT on single table"
+    },
+    {
+      "id": 2,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "Show all camera locations",
+      "expected_sql": "SELECT * FROM camera_locations",
+      "description": "Basic SELECT on camera_locations"
+    },
+    {
+      "id": 3,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "How many zones are there?",
+      "expected_sql": "SELECT COUNT(*) FROM zones",
+      "description": "Simple COUNT aggregation"
+    },
+    {
+      "id": 4,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all violation types",
+      "expected_sql": "SELECT DISTINCT violation_type FROM violations",
+      "description": "SELECT DISTINCT on violations"
+    },
+    {
+      "id": 5,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show only approved infrastructure projects",
+      "expected_sql": "SELECT * FROM infrastructure_projects WHERE status = 'Approved'",
+      "description": "Filter by status string"
+    },
+    {
+      "id": 6,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Which cameras are of type speed?",
+      "expected_sql": "SELECT * FROM camera_locations WHERE camera_type = 'speed'",
+      "description": "Filter by camera type"
+    },
+    {
+      "id": 7,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show incidents that are still ongoing",
+      "expected_sql": "SELECT * FROM incidents WHERE status = 'Ongoing'",
+      "description": "Filter incidents by status"
+    },
+    {
+      "id": 8,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "List roads with more than 3 lanes",
+      "expected_sql": "SELECT * FROM roads WHERE lanes > 3",
+      "description": "Numeric filter"
+    },
+    {
+      "id": 9,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many traffic violations happened in each district?",
+      "expected_sql": "SELECT d.name, COUNT(*) as total FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.id",
+      "description": "Multi-JOIN with GROUP BY"
+    },
+    {
+      "id": 10,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the average vehicle count per zone?",
+      "expected_sql": "SELECT z.name, AVG(tr.vehicle_count) FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN zones z ON r.zone_id = z.id GROUP BY z.id",
+      "description": "AVG with multi-table JOIN"
+    },
+    {
+      "id": 11,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the total budget of all infrastructure projects?",
+      "expected_sql": "SELECT SUM(budget) FROM infrastructure_projects",
+      "description": "Simple SUM"
+    },
+    {
+      "id": 12,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many incidents were reported per severity level?",
+      "expected_sql": "SELECT severity, COUNT(*) FROM incidents GROUP BY severity",
+      "description": "GROUP BY with COUNT"
+    },
+    {
+      "id": 13,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show cameras and which road they are on",
+      "expected_sql": "SELECT cl.location_desc, r.road_name FROM camera_locations cl JOIN roads r ON cl.road_id = r.id",
+      "description": "Basic JOIN"
+    },
+    {
+      "id": 14,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "List districts and how many roads each has",
+      "expected_sql": "SELECT d.name, COUNT(r.id) FROM districts d JOIN roads r ON d.id = r.district_id GROUP BY d.id",
+      "description": "JOIN with GROUP BY"
+    },
+    {
+      "id": 15,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show air quality readings with zone names",
+      "expected_sql": "SELECT z.name, w.pm25, w.pm10, w.recorded_at FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.data_type = 'air_quality'",
+      "description": "JOIN with WHERE filter"
+    },
+    {
+      "id": 16,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Which district has the most camera locations?",
+      "expected_sql": "SELECT d.name, COUNT(cl.id) as camera_count FROM districts d JOIN roads r ON d.id = r.district_id JOIN camera_locations cl ON r.id = cl.road_id GROUP BY d.id ORDER BY camera_count DESC LIMIT 1",
+      "description": "Multi-JOIN with ORDER BY and LIMIT"
+    },
+    {
+      "id": 17,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which camera detects the most violations?",
+      "expected_sql": "SELECT cl.location_desc, cl.camera_type, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id GROUP BY cl.id ORDER BY total_violations DESC LIMIT 1",
+      "description": "JOIN with GROUP BY, ORDER BY, LIMIT"
+    },
+    {
+      "id": 18,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Show the average speed per road during peak hours",
+      "expected_sql": "SELECT r.road_name, AVG(tr.avg_speed) FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id WHERE tr.is_peak_hour = 1 GROUP BY r.id",
+      "description": "Multi-JOIN with boolean filter and AVG"
+    },
+    {
+      "id": 19,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "What is the total fine amount per violation type?",
+      "expected_sql": "SELECT violation_type, SUM(fine_amount) as total_fines FROM violations GROUP BY violation_type ORDER BY total_fines DESC",
+      "description": "GROUP BY with SUM and ORDER BY"
+    },
+    {
+      "id": 20,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which districts have infrastructure projects with budget over 500000?",
+      "expected_sql": "SELECT d.name, ip.project_name, ip.budget FROM infrastructure_projects ip JOIN districts d ON ip.district_id = d.id WHERE ip.budget > 500000",
+      "description": "JOIN with numeric filter"
+    },
+    {
+      "id": 21,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which zone has the worst air quality (highest PM2.5)?",
+      "expected_sql": "SELECT z.name, MAX(w.pm25) as max_pm25 FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.data_type = 'air_quality' GROUP BY z.id ORDER BY max_pm25 DESC LIMIT 1",
+      "description": "MAX with JOIN, GROUP BY, ORDER BY, LIMIT"
+    },
+    {
+      "id": 22,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Show districts with both incidents and violations",
+      "expected_sql": "SELECT d.name FROM districts d WHERE d.id IN (SELECT r.district_id FROM roads r JOIN camera_locations cl ON r.id = cl.road_id JOIN violations v ON cl.id = v.camera_id) AND d.id IN (SELECT district_id FROM incidents)",
+      "description": "Subquery with IN"
+    },
+    {
+      "id": 23,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "What is the average response time for incidents per district?",
+      "expected_sql": "SELECT d.name, AVG(i.response_time_minutes) FROM incidents i JOIN districts d ON i.district_id = d.id WHERE i.response_time_minutes IS NOT NULL GROUP BY d.id",
+      "description": "AVG with NULL filter"
+    },
+    {
+      "id": 24,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "List roads with above-average congestion level",
+      "expected_sql": "SELECT r.road_name, AVG(tr.congestion_level) as avg_congestion FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id GROUP BY r.id HAVING AVG(tr.congestion_level) > (SELECT AVG(congestion_level) FROM traffic_readings)",
+      "description": "HAVING with correlated subquery"
+    },
+    {
+      "id": 25,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Rank zones by their average air quality index",
+      "expected_sql": "SELECT z.name, AVG(w.air_quality_index) as avg_aqi, RANK() OVER (ORDER BY AVG(w.air_quality_index) DESC) as rank FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.air_quality_index IS NOT NULL GROUP BY z.id",
+      "description": "Window function with RANK"
+    },
+    {
+      "id": 26,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Show the running total of violations per day",
+      "expected_sql": "SELECT DATE(violation_time) as day, COUNT(*) as daily_count, SUM(COUNT(*)) OVER (ORDER BY DATE(violation_time)) as running_total FROM violations GROUP BY DATE(violation_time)",
+      "description": "Window function with SUM OVER"
+    },
+    {
+      "id": 27,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Find the busiest camera in each district",
+      "expected_sql": "SELECT d.name, cl.location_desc, COUNT(v.id) as violation_count FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY cl.id ORDER BY d.name, violation_count DESC",
+      "description": "Multi-JOIN with GROUP BY and ORDER BY"
+    },
+    {
+      "id": 28,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Compare total violations this month vs last month per district",
+      "expected_sql": "SELECT d.name, SUM(CASE WHEN v.violation_time >= date('now', 'start of month') THEN 1 ELSE 0 END) as this_month, SUM(CASE WHEN v.violation_time < date('now', 'start of month') AND v.violation_time >= date('now', 'start of month', '-1 month') THEN 1 ELSE 0 END) as last_month FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.id",
+      "description": "CASE WHEN with date functions"
+    },
+    {
+      "id": 29,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Use a CTE to show district summaries with total violations, incidents, and projects",
+      "expected_sql": "WITH v AS (SELECT d.id, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.id), i AS (SELECT district_id, COUNT(*) as total_incidents FROM incidents GROUP BY district_id), p AS (SELECT district_id, COUNT(*) as total_projects FROM infrastructure_projects GROUP BY district_id) SELECT d.name, COALESCE(v.total_violations, 0), COALESCE(i.total_incidents, 0), COALESCE(p.total_projects, 0) FROM districts d LEFT JOIN v ON d.id = v.id LEFT JOIN i ON d.id = i.district_id LEFT JOIN p ON d.id = p.district_id",
+      "description": "CTE with multiple joins"
+    },
+    {
+      "id": 30,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Show weather data trends - compare air quality between zones using a subquery",
+      "expected_sql": "SELECT z.name, AVG(w.air_quality_index) as avg_aqi FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.air_quality_index IS NOT NULL GROUP BY z.id HAVING AVG(w.air_quality_index) > (SELECT AVG(air_quality_index) FROM weather_data WHERE air_quality_index IS NOT NULL)",
+      "description": "HAVING with scalar subquery comparison"
+    }
+  ]
+}

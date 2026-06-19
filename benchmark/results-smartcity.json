@@ -1,0 +1,964 @@
+{
+  "metadata": {
+    "benchmark_version": "1.0",
+    "domain": "smartcity",
+    "run_date": "2026-06-19T10:26:13.970439",
+    "backend_url": "http://localhost:8080",
+    "total_questions": 30
+  },
+  "summary": {
+    "execution_accuracy_pct": 100.0,
+    "result_accuracy_pct": 26.7,
+    "exact_match_count": 1,
+    "error_count": 0,
+    "avg_response_ms": 718.0,
+    "total_time_ms": 21543
+  },
+  "stats_by_difficulty": {
+    "easy": {
+      "total": 8,
+      "executed": 8,
+      "matched": 3
+    },
+    "medium": {
+      "total": 8,
+      "executed": 8,
+      "matched": 2
+    },
+    "hard": {
+      "total": 14,
+      "executed": 14,
+      "matched": 3
+    }
+  },
+  "stats_by_category": {
+    "simple_select": {
+      "total": 4,
+      "executed": 4,
+      "matched": 3
+    },
+    "filter_where": {
+      "total": 4,
+      "executed": 4,
+      "matched": 0
+    },
+    "aggregation": {
+      "total": 4,
+      "executed": 4,
+      "matched": 1
+    },
+    "join": {
+      "total": 4,
+      "executed": 4,
+      "matched": 1
+    },
+    "complex": {
+      "total": 8,
+      "executed": 8,
+      "matched": 2
+    },
+    "advanced": {
+      "total": 6,
+      "executed": 6,
+      "matched": 1
+    }
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all districts",
+      "expected_sql": "SELECT * FROM districts",
+      "generated_sql": "SELECT id, name, area_km2, population, budget FROM districts ORDER BY id LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 8,
+      "generated_data_count": 8,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "DISTRICTS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 705,
+      "error": null
+    },
+    {
+      "id": 2,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "Show all camera locations",
+      "expected_sql": "SELECT * FROM camera_locations",
+      "generated_sql": "SELECT * FROM camera_locations LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 100,
+      "generated_data_count": 100,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "CAMERA_LOCATIONS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 562,
+      "error": null
+    },
+    {
+      "id": 3,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "How many zones are there?",
+      "expected_sql": "SELECT COUNT(*) FROM zones",
+      "generated_sql": "SELECT COUNT(*) as total_zones FROM zones LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "COUNT(*)",
+          "ZONES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 609,
+      "error": null
+    },
+    {
+      "id": 4,
+      "category": "simple_select",
+      "difficulty": "easy",
+      "question": "List all violation types",
+      "expected_sql": "SELECT DISTINCT violation_type FROM violations",
+      "generated_sql": "SELECT DISTINCT violation_type FROM violations ORDER BY violation_type LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "VIOLATIONS",
+          "VIOLATION_TYPE"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 566,
+      "error": null
+    },
+    {
+      "id": 5,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show only approved infrastructure projects",
+      "expected_sql": "SELECT * FROM infrastructure_projects WHERE status = 'Approved'",
+      "generated_sql": "SELECT * FROM infrastructure_projects WHERE status = 'completed' LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 8,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.667,
+        "keywords_found": [
+          "INFRASTRUCTURE_PROJECTS",
+          "STATUS"
+        ],
+        "keywords_missing": [
+          "'APPROVED'"
+        ]
+      },
+      "response_ms": 826,
+      "error": null
+    },
+    {
+      "id": 6,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Which cameras are of type speed?",
+      "expected_sql": "SELECT * FROM camera_locations WHERE camera_type = 'speed'",
+      "generated_sql": "SELECT id, location_desc, camera_type FROM camera_locations WHERE camera_type = 'speed' LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 34,
+      "generated_data_count": 34,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "CAMERA_LOCATIONS",
+          "'SPEED'",
+          "CAMERA_TYPE"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 604,
+      "error": null
+    },
+    {
+      "id": 7,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "Show incidents that are still ongoing",
+      "expected_sql": "SELECT * FROM incidents WHERE status = 'Ongoing'",
+      "generated_sql": "SELECT * FROM incidents WHERE status IN ('open', 'in_progress') LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 15,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.667,
+        "keywords_found": [
+          "INCIDENTS",
+          "STATUS"
+        ],
+        "keywords_missing": [
+          "'ONGOING'"
+        ]
+      },
+      "response_ms": 670,
+      "error": null
+    },
+    {
+      "id": 8,
+      "category": "filter_where",
+      "difficulty": "easy",
+      "question": "List roads with more than 3 lanes",
+      "expected_sql": "SELECT * FROM roads WHERE lanes > 3",
+      "generated_sql": "SELECT road_name, lanes FROM roads WHERE lanes > 3 LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 28,
+      "generated_data_count": 28,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "ROADS",
+          "LANES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 644,
+      "error": null
+    },
+    {
+      "id": 9,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many traffic violations happened in each district?",
+      "expected_sql": "SELECT d.name, COUNT(*) as total FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.id",
+      "generated_sql": "SELECT d.name, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.name ORDER BY total_violations DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 8,
+      "generated_data_count": 8,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "R.DISTRICT_ID",
+          "R.ID",
+          "D.ID",
+          "CL.ID",
+          "COUNT(*)",
+          "V.CAMERA_ID",
+          "ROADS",
+          "CL.ROAD_ID",
+          "D.NAME,",
+          "CAMERA_LOCATIONS",
+          "DISTRICTS",
+          "VIOLATIONS",
+          "TOTAL"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 768,
+      "error": null
+    },
+    {
+      "id": 10,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the average vehicle count per zone?",
+      "expected_sql": "SELECT z.name, AVG(tr.vehicle_count) FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN zones z ON r.zone_id = z.id GROUP BY z.id",
+      "generated_sql": "SELECT z.name, AVG(tr.vehicle_count) as avg_vehicle_count FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN zones z ON r.zone_id = z.id GROUP BY z.name ORDER BY avg_vehicle_count DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 30,
+      "generated_data_count": 30,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "R.ID",
+          "R.ZONE_ID",
+          "CL.ID",
+          "Z.NAME,",
+          "Z.ID",
+          "CL.ROAD_ID",
+          "ROADS",
+          "ZONES",
+          "TR.CAMERA_ID",
+          "CAMERA_LOCATIONS",
+          "AVG(TR.VEHICLE_COUNT)",
+          "TRAFFIC_READINGS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 670,
+      "error": null
+    },
+    {
+      "id": 11,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "What is the total budget of all infrastructure projects?",
+      "expected_sql": "SELECT SUM(budget) FROM infrastructure_projects",
+      "generated_sql": "SELECT SUM(budget) as total_budget FROM infrastructure_projects LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "INFRASTRUCTURE_PROJECTS",
+          "SUM(BUDGET)"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 691,
+      "error": null
+    },
+    {
+      "id": 12,
+      "category": "aggregation",
+      "difficulty": "medium",
+      "question": "How many incidents were reported per severity level?",
+      "expected_sql": "SELECT severity, COUNT(*) FROM incidents GROUP BY severity",
+      "generated_sql": "SELECT severity, COUNT(*) as total_incidents FROM incidents GROUP BY severity ORDER BY total_incidents DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 4,
+      "generated_data_count": 4,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "COUNT(*)",
+          "SEVERITY",
+          "INCIDENTS",
+          "SEVERITY,"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 530,
+      "error": null
+    },
+    {
+      "id": 13,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show cameras and which road they are on",
+      "expected_sql": "SELECT cl.location_desc, r.road_name FROM camera_locations cl JOIN roads r ON cl.road_id = r.id",
+      "generated_sql": "SELECT cl.location_desc, cl.camera_type, r.road_name FROM camera_locations cl JOIN roads r ON cl.road_id = r.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 100,
+      "generated_data_count": 100,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "R.ID",
+          "R.ROAD_NAME",
+          "CL.ROAD_ID",
+          "ROADS",
+          "CAMERA_LOCATIONS",
+          "CL.LOCATION_DESC,"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 615,
+      "error": null
+    },
+    {
+      "id": 14,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "List districts and how many roads each has",
+      "expected_sql": "SELECT d.name, COUNT(r.id) FROM districts d JOIN roads r ON d.id = r.district_id GROUP BY d.id",
+      "generated_sql": "SELECT d.name, COUNT(r.id) as total_roads FROM districts d JOIN roads r ON d.id = r.district_id GROUP BY d.name ORDER BY total_roads DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 8,
+      "generated_data_count": 8,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "R.DISTRICT_ID",
+          "D.ID",
+          "ROADS",
+          "D.NAME,",
+          "DISTRICTS",
+          "COUNT(R.ID)"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 539,
+      "error": null
+    },
+    {
+      "id": 15,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Show air quality readings with zone names",
+      "expected_sql": "SELECT z.name, w.pm25, w.pm10, w.recorded_at FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.data_type = 'air_quality'",
+      "generated_sql": "SELECT wd.id, z.name, wd.recorded_at, wd.data_type, wd.temperature, wd.humidity, wd.wind_speed, wd.pm25, wd.pm10, wd.air_quality_index, wd.weather_condition FROM weather_data wd JOIN zones z ON wd.zone_id = z.id LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 9,
+      "generated_data_count": 60,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.4,
+        "keywords_found": [
+          "WEATHER_DATA",
+          "Z.ID",
+          "Z.NAME,",
+          "ZONES"
+        ],
+        "keywords_missing": [
+          "W.ZONE_ID",
+          "W.RECORDED_AT",
+          "'AIR_QUALITY'",
+          "W.PM10,",
+          "W.PM25,",
+          "W.DATA_TYPE"
+        ]
+      },
+      "response_ms": 726,
+      "error": null
+    },
+    {
+      "id": 16,
+      "category": "join",
+      "difficulty": "medium",
+      "question": "Which district has the most camera locations?",
+      "expected_sql": "SELECT d.name, COUNT(cl.id) as camera_count FROM districts d JOIN roads r ON d.id = r.district_id JOIN camera_locations cl ON r.id = cl.road_id GROUP BY d.id ORDER BY camera_count DESC LIMIT 1",
+      "generated_sql": "SELECT d.name, COUNT(cl.id) as total_camera_locations FROM districts d JOIN roads r ON d.id = r.district_id JOIN camera_locations cl ON r.id = cl.road_id GROUP BY d.name ORDER BY total_camera_locations DESC LIMIT 1",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.9,
+        "keywords_found": [
+          "R.DISTRICT_ID",
+          "R.ID",
+          "D.ID",
+          "COUNT(CL.ID)",
+          "CL.ROAD_ID",
+          "ROADS",
+          "D.NAME,",
+          "CAMERA_LOCATIONS",
+          "DISTRICTS"
+        ],
+        "keywords_missing": [
+          "CAMERA_COUNT"
+        ]
+      },
+      "response_ms": 679,
+      "error": null
+    },
+    {
+      "id": 17,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which camera detects the most violations?",
+      "expected_sql": "SELECT cl.location_desc, cl.camera_type, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id GROUP BY cl.id ORDER BY total_violations DESC LIMIT 1",
+      "generated_sql": "SELECT cl.location_desc, cl.camera_type, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id GROUP BY cl.id ORDER BY total_violations DESC LIMIT 1",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": true,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "CL.ID",
+          "COUNT(*)",
+          "V.CAMERA_ID",
+          "CAMERA_LOCATIONS",
+          "TOTAL_VIOLATIONS",
+          "CL.LOCATION_DESC,",
+          "CL.CAMERA_TYPE,",
+          "VIOLATIONS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 1006,
+      "error": null
+    },
+    {
+      "id": 18,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Show the average speed per road during peak hours",
+      "expected_sql": "SELECT r.road_name, AVG(tr.avg_speed) FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id WHERE tr.is_peak_hour = 1 GROUP BY r.id",
+      "generated_sql": "SELECT r.road_name, AVG(tr.avg_speed) as avg_speed FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id WHERE tr.is_peak_hour = 1 GROUP BY r.road_name HAVING AVG(tr.avg_speed) IS NOT NULL ORDER BY avg_speed DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 14,
+      "generated_data_count": 13,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "R.ID",
+          "TR.IS_PEAK_HOUR",
+          "CL.ID",
+          "CL.ROAD_ID",
+          "ROADS",
+          "R.ROAD_NAME,",
+          "TR.CAMERA_ID",
+          "CAMERA_LOCATIONS",
+          "AVG(TR.AVG_SPEED)",
+          "TRAFFIC_READINGS"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 684,
+      "error": null
+    },
+    {
+      "id": 19,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "What is the total fine amount per violation type?",
+      "expected_sql": "SELECT violation_type, SUM(fine_amount) as total_fines FROM violations GROUP BY violation_type ORDER BY total_fines DESC",
+      "generated_sql": "SELECT violation_type, SUM(fine_amount) as total_fine FROM violations GROUP BY violation_type ORDER BY total_fine DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 6,
+      "generated_data_count": 6,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.8,
+        "keywords_found": [
+          "VIOLATION_TYPE,",
+          "SUM(FINE_AMOUNT)",
+          "VIOLATIONS",
+          "VIOLATION_TYPE"
+        ],
+        "keywords_missing": [
+          "TOTAL_FINES"
+        ]
+      },
+      "response_ms": 769,
+      "error": null
+    },
+    {
+      "id": 20,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which districts have infrastructure projects with budget over 500000?",
+      "expected_sql": "SELECT d.name, ip.project_name, ip.budget FROM infrastructure_projects ip JOIN districts d ON ip.district_id = d.id WHERE ip.budget > 500000",
+      "generated_sql": "SELECT d.name FROM districts d JOIN infrastructure_projects ip ON d.id = ip.district_id WHERE ip.budget > 500000 GROUP BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 30,
+      "generated_data_count": 7,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.75,
+        "keywords_found": [
+          "D.ID",
+          "INFRASTRUCTURE_PROJECTS",
+          "DISTRICTS",
+          "IP.BUDGET",
+          "IP.DISTRICT_ID",
+          "500000"
+        ],
+        "keywords_missing": [
+          "IP.PROJECT_NAME,",
+          "D.NAME,"
+        ]
+      },
+      "response_ms": 613,
+      "error": null
+    },
+    {
+      "id": 21,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Which zone has the worst air quality (highest PM2.5)?",
+      "expected_sql": "SELECT z.name, MAX(w.pm25) as max_pm25 FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.data_type = 'air_quality' GROUP BY z.id ORDER BY max_pm25 DESC LIMIT 1",
+      "generated_sql": "SELECT z.name, wd.pm25 AS pm25_level FROM weather_data wd JOIN zones z ON wd.zone_id = z.id ORDER BY wd.pm25 DESC LIMIT 1",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 1,
+      "generated_data_count": 1,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.444,
+        "keywords_found": [
+          "WEATHER_DATA",
+          "Z.ID",
+          "Z.NAME,",
+          "ZONES"
+        ],
+        "keywords_missing": [
+          "W.ZONE_ID",
+          "'AIR_QUALITY'",
+          "MAX(W.PM25)",
+          "MAX_PM25",
+          "W.DATA_TYPE"
+        ]
+      },
+      "response_ms": 741,
+      "error": null
+    },
+    {
+      "id": 22,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "Show districts with both incidents and violations",
+      "expected_sql": "SELECT d.name FROM districts d WHERE d.id IN (SELECT r.district_id FROM roads r JOIN camera_locations cl ON r.id = cl.road_id JOIN violations v ON cl.id = v.camera_id) AND d.id IN (SELECT district_id FROM incidents)",
+      "generated_sql": "SELECT DISTINCT d.name FROM districts d JOIN incidents i ON d.id = i.district_id JOIN camera_locations cl ON d.id = cl.road_id JOIN violations v ON cl.id = v.camera_id WHERE i.incident_type IS NOT NULL AND v.violation_type IS NOT NULL LIMIT 100",
+      "execution_success": true,
+      "data_match": "partial_match",
+      "expected_data_count": 8,
+      "generated_data_count": 7,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.571,
+        "keywords_found": [
+          "D.ID",
+          "CL.ID",
+          "DISTRICT_ID",
+          "CL.ROAD_ID",
+          "CAMERA_LOCATIONS",
+          "DISTRICTS",
+          "D.NAME",
+          "VIOLATIONS"
+        ],
+        "keywords_missing": [
+          "R.DISTRICT_ID",
+          "R.ID",
+          "ROADS",
+          "V.CAMERA_ID)",
+          "(SELECT",
+          "INCIDENTS)"
+        ]
+      },
+      "response_ms": 781,
+      "error": null
+    },
+    {
+      "id": 23,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "What is the average response time for incidents per district?",
+      "expected_sql": "SELECT d.name, AVG(i.response_time_minutes) FROM incidents i JOIN districts d ON i.district_id = d.id WHERE i.response_time_minutes IS NOT NULL GROUP BY d.id",
+      "generated_sql": "SELECT d.name, AVG(i.response_time_minutes) as avg_response_time FROM incidents i JOIN districts d ON i.district_id = d.id GROUP BY d.name HAVING AVG(i.response_time_minutes) IS NOT NULL ORDER BY avg_response_time ASC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 7,
+      "generated_data_count": 7,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 1.0,
+        "keywords_found": [
+          "D.ID",
+          "I.DISTRICT_ID",
+          "D.NAME,",
+          "INCIDENTS",
+          "AVG(I.RESPONSE_TIME_MINUTES)",
+          "DISTRICTS",
+          "I.RESPONSE_TIME_MINUTES"
+        ],
+        "keywords_missing": []
+      },
+      "response_ms": 724,
+      "error": null
+    },
+    {
+      "id": 24,
+      "category": "complex",
+      "difficulty": "hard",
+      "question": "List roads with above-average congestion level",
+      "expected_sql": "SELECT r.road_name, AVG(tr.congestion_level) as avg_congestion FROM traffic_readings tr JOIN camera_locations cl ON tr.camera_id = cl.id JOIN roads r ON cl.road_id = r.id GROUP BY r.id HAVING AVG(tr.congestion_level) > (SELECT AVG(congestion_level) FROM traffic_readings)",
+      "generated_sql": "SELECT r.road_name, AVG(tr.congestion_level) as avg_congestion FROM roads r JOIN camera_locations cl ON r.id = cl.road_id JOIN traffic_readings tr ON cl.id = tr.camera_id GROUP BY r.id HAVING AVG(CASE WHEN tr.congestion_level = 'high' THEN 1 WHEN tr.congestion_level = 'severe' THEN 2 ELSE 0 END) > (SELECT AVG(CASE WHEN congestion_level = 'high' THEN 1 WHEN congestion_level = 'severe' THEN 2 ELSE 0 END) FROM traffic_readings) LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 0,
+      "generated_data_count": 20,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.923,
+        "keywords_found": [
+          "R.ID",
+          "TRAFFIC_READINGS)",
+          "CL.ID",
+          "CL.ROAD_ID",
+          "AVG_CONGESTION",
+          "ROADS",
+          "AVG(TR.CONGESTION_LEVEL)",
+          "R.ROAD_NAME,",
+          "TR.CAMERA_ID",
+          "CAMERA_LOCATIONS",
+          "(SELECT",
+          "TRAFFIC_READINGS"
+        ],
+        "keywords_missing": [
+          "AVG(CONGESTION_LEVEL)"
+        ]
+      },
+      "response_ms": 1162,
+      "error": null
+    },
+    {
+      "id": 25,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Rank zones by their average air quality index",
+      "expected_sql": "SELECT z.name, AVG(w.air_quality_index) as avg_aqi, RANK() OVER (ORDER BY AVG(w.air_quality_index) DESC) as rank FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.air_quality_index IS NOT NULL GROUP BY z.id",
+      "generated_sql": "SELECT z.name, AVG(w.air_quality_index) as avg_air_quality_index FROM zones z JOIN weather_data w ON z.id = w.zone_id GROUP BY z.name ORDER BY avg_air_quality_index DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 31,
+      "generated_data_count": 31,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.636,
+        "keywords_found": [
+          "WEATHER_DATA",
+          "Z.ID",
+          "Z.NAME,",
+          "W.ZONE_ID",
+          "W.AIR_QUALITY_INDEX",
+          "ZONES",
+          "AVG(W.AIR_QUALITY_INDEX)"
+        ],
+        "keywords_missing": [
+          "RANK()",
+          "(ORDER",
+          "AVG_AQI,",
+          "DESC)"
+        ]
+      },
+      "response_ms": 611,
+      "error": null
+    },
+    {
+      "id": 26,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Show the running total of violations per day",
+      "expected_sql": "SELECT DATE(violation_time) as day, COUNT(*) as daily_count, SUM(COUNT(*)) OVER (ORDER BY DATE(violation_time)) as running_total FROM violations GROUP BY DATE(violation_time)",
+      "generated_sql": "SELECT DATE(violation_time) AS date, SUM(fine_amount) AS total_fine, COUNT(*) AS total_violations FROM violations GROUP BY DATE(violation_time) ORDER BY date LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 52,
+      "generated_data_count": 52,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.333,
+        "keywords_found": [
+          "COUNT(*)",
+          "DATE(VIOLATION_TIME)",
+          "VIOLATIONS"
+        ],
+        "keywords_missing": [
+          "SUM(COUNT(*))",
+          "DAILY_COUNT,",
+          "(ORDER",
+          "RUNNING_TOTAL",
+          "DATE(VIOLATION_TIME))",
+          "DAY,"
+        ]
+      },
+      "response_ms": 726,
+      "error": null
+    },
+    {
+      "id": 27,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Find the busiest camera in each district",
+      "expected_sql": "SELECT d.name, cl.location_desc, COUNT(v.id) as violation_count FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY cl.id ORDER BY d.name, violation_count DESC",
+      "generated_sql": "SELECT d.name, cl.location_desc, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.name, cl.location_desc ORDER BY d.name, total_violations DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 61,
+      "generated_data_count": 49,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.857,
+        "keywords_found": [
+          "R.DISTRICT_ID",
+          "R.ID",
+          "CL.ID",
+          "D.ID",
+          "CL.ROAD_ID",
+          "V.CAMERA_ID",
+          "ROADS",
+          "D.NAME,",
+          "CAMERA_LOCATIONS",
+          "DISTRICTS",
+          "CL.LOCATION_DESC,",
+          "VIOLATIONS"
+        ],
+        "keywords_missing": [
+          "VIOLATION_COUNT",
+          "COUNT(V.ID)"
+        ]
+      },
+      "response_ms": 754,
+      "error": null
+    },
+    {
+      "id": 28,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Compare total violations this month vs last month per district",
+      "expected_sql": "SELECT d.name, SUM(CASE WHEN v.violation_time >= date('now', 'start of month') THEN 1 ELSE 0 END) as this_month, SUM(CASE WHEN v.violation_time < date('now', 'start of month') AND v.violation_time >= date('now', 'start of month', '-1 month') THEN 1 ELSE 0 END) as last_month FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.id",
+      "generated_sql": "SELECT d.name, SUM(CASE WHEN STRFTIME('%Y-%m', v.violation_time) = STRFTIME('%Y-%m', DATE('now')) THEN 1 ELSE 0 END) AS this_month, SUM(CASE WHEN STRFTIME('%Y-%m', v.violation_time) = STRFTIME('%Y-%m', DATE('now', '-1 month')) THEN 1 ELSE 0 END) AS last_month FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.name ORDER BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "exact_match",
+      "expected_data_count": 8,
+      "generated_data_count": 8,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.905,
+        "keywords_found": [
+          "LAST_MONTH",
+          "CL.ID",
+          "V.CAMERA_ID",
+          "MONTH')",
+          "'-1",
+          "V.VIOLATION_TIME",
+          "R.DISTRICT_ID",
+          "D.ID",
+          "CL.ROAD_ID",
+          "DATE('NOW',",
+          "END)",
+          "CAMERA_LOCATIONS",
+          "DISTRICTS",
+          "THIS_MONTH,",
+          "VIOLATIONS",
+          "R.ID",
+          "ROADS",
+          "D.NAME,",
+          "SUM(CASE"
+        ],
+        "keywords_missing": [
+          "MONTH',",
+          "'START"
+        ]
+      },
+      "response_ms": 917,
+      "error": null
+    },
+    {
+      "id": 29,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Use a CTE to show district summaries with total violations, incidents, and projects",
+      "expected_sql": "WITH v AS (SELECT d.id, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.id), i AS (SELECT district_id, COUNT(*) as total_incidents FROM incidents GROUP BY district_id), p AS (SELECT district_id, COUNT(*) as total_projects FROM infrastructure_projects GROUP BY district_id) SELECT d.name, COALESCE(v.total_violations, 0), COALESCE(i.total_incidents, 0), COALESCE(p.total_projects, 0) FROM districts d LEFT JOIN v ON d.id = v.id LEFT JOIN i ON d.id = i.district_id LEFT JOIN p ON d.id = p.district_id",
+      "generated_sql": "SELECT d.name, COALESCE(v.total_violations, 0) AS total_violations, COALESCE(i.total_incidents, 0) AS total_incidents, COALESCE(p.total_projects, 0) AS total_projects FROM districts d LEFT JOIN ( SELECT district_id, COUNT(*) AS total_violations FROM ( SELECT cl.road_id, v.id FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id ) AS sub JOIN roads r ON sub.road_id = r.id GROUP BY district_id ) v ON d.id = v.district_id LEFT JOIN ( SELECT district_id, COUNT(*) AS total_incidents FROM incidents GROUP BY district_id ) i ON d.id = i.district_id LEFT JOIN ( SELECT district_id, COUNT(*) AS total_projects FROM infrastructure_projects GROUP BY district_id ) p ON d.id = p.district_id ORDER BY d.name LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 8,
+      "generated_data_count": 8,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.767,
+        "keywords_found": [
+          "CL.ID",
+          "I.DISTRICT_ID",
+          "DISTRICT_ID,",
+          "COUNT(*)",
+          "V.CAMERA_ID",
+          "INCIDENTS",
+          "D.ID",
+          "P.DISTRICT_ID",
+          "CL.ROAD_ID",
+          "V.ID",
+          "TOTAL_INCIDENTS",
+          "COALESCE(V.TOTAL_VIOLATIONS,",
+          "TOTAL_PROJECTS",
+          "CAMERA_LOCATIONS",
+          "DISTRICTS",
+          "TOTAL_VIOLATIONS",
+          "VIOLATIONS",
+          "R.ID",
+          "COALESCE(P.TOTAL_PROJECTS,",
+          "ROADS",
+          "INFRASTRUCTURE_PROJECTS",
+          "D.NAME,",
+          "COALESCE(I.TOTAL_INCIDENTS,"
+        ],
+        "keywords_missing": [
+          "0),",
+          "R.DISTRICT_ID",
+          "D.ID),",
+          "D.ID,",
+          "DISTRICT_ID)",
+          "(SELECT",
+          "DISTRICT_ID),"
+        ]
+      },
+      "response_ms": 961,
+      "error": null
+    },
+    {
+      "id": 30,
+      "category": "advanced",
+      "difficulty": "hard",
+      "question": "Show weather data trends - compare air quality between zones using a subquery",
+      "expected_sql": "SELECT z.name, AVG(w.air_quality_index) as avg_aqi FROM weather_data w JOIN zones z ON w.zone_id = z.id WHERE w.air_quality_index IS NOT NULL GROUP BY z.id HAVING AVG(w.air_quality_index) > (SELECT AVG(air_quality_index) FROM weather_data WHERE air_quality_index IS NOT NULL)",
+      "generated_sql": "SELECT z.name, AVG(wd.air_quality_index) as avg_air_quality FROM zones z JOIN weather_data wd ON z.id = wd.zone_id WHERE wd.data_type = 'air_quality' GROUP BY z.name HAVING AVG(wd.air_quality_index) > ( SELECT AVG(air_quality_index) FROM weather_data WHERE data_type = 'air_quality' ) ORDER BY avg_air_quality DESC LIMIT 100",
+      "execution_success": true,
+      "data_match": "mismatch",
+      "expected_data_count": 18,
+      "generated_data_count": 4,
+      "sql_similarity": {
+        "exact_match": false,
+        "keyword_match_ratio": 0.5,
+        "keywords_found": [
+          "WEATHER_DATA",
+          "Z.ID",
+          "Z.NAME,",
+          "ZONES",
+          "AVG(AIR_QUALITY_INDEX)",
+          "AIR_QUALITY_INDEX"
+        ],
+        "keywords_missing": [
+          "W.AIR_QUALITY_INDEX",
+          "W.ZONE_ID",
+          "AVG_AQI",
+          "NULL)",
+          "(SELECT",
+          "AVG(W.AIR_QUALITY_INDEX)"
+        ]
+      },
+      "response_ms": 690,
+      "error": null
+    }
+  ]
+}

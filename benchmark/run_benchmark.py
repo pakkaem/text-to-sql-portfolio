@@ -6,12 +6,19 @@ Evaluates the accuracy of the Text-to-SQL AI system by running benchmark questio
 against the backend service and comparing results.
 
 Usage:
-    python run_benchmark.py [--backend-url http://localhost:8080] [--output results.json] [--timeout 60]
+    python run_benchmark.py                              # Run ALL domains (HRIS + Smart City)
+    python run_benchmark.py --domain hris                # Run HRIS only
+    python run_benchmark.py --domain smartcity           # Run Smart City only
+    python run_benchmark.py --domain all                 # Run ALL domains explicitly
 
 Prerequisites:
     - Backend service running on http://localhost:8080 (or specify --backend-url)
     - AI service running and connected to backend
-    - Database seeded with HRIS data
+    - Database seeded with data for the chosen domain
+
+Domains:
+    hris       - HRIS database (employees, departments, payroll, etc.)
+    smartcity  - Smart City database (districts, cameras, traffic, violations, etc.)
 """
 
 import json
@@ -28,9 +35,18 @@ from urllib.error import URLError, HTTPError
 DEFAULT_BACKEND_URL = "http://localhost:8080"
 DEFAULT_TIMEOUT = 60  # seconds per question
 DEFAULT_DELAY = 10.0  # seconds between questions (rate limit protection)
+DEFAULT_DOMAIN = "all"
+ALL_DOMAINS = ["hris", "smartcity"]
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BENCHMARK_FILE = os.path.join(SCRIPT_DIR, "benchmark.json")
+BENCHMARK_FILES = {
+    "hris": os.path.join(SCRIPT_DIR, "benchmark.json"),
+    "smartcity": os.path.join(SCRIPT_DIR, "benchmark-smartcity.json"),
+}
 DEFAULT_OUTPUT = os.path.join(SCRIPT_DIR, "results.json")
+DOMAIN_OUTPUT = {
+    "hris": os.path.join(SCRIPT_DIR, "results.json"),
+    "smartcity": os.path.join(SCRIPT_DIR, "results-smartcity.json"),
+}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -41,13 +57,13 @@ def load_benchmark(path: str) -> dict:
         return json.load(f)
 
 
-def ask_question(backend_url: str, question: str, timeout: int) -> dict:
+def ask_question(backend_url: str, question: str, timeout: int, domain: str = "hris") -> dict:
     """
     Send a question to the backend /ask endpoint.
     Returns a dict with keys: generated_sql, data, response_ms, error
     """
     url = f"{backend_url}/ask"
-    payload = json.dumps({"question": question}).encode("utf-8")
+    payload = json.dumps({"question": question, "domain": domain}).encode("utf-8")
     req = Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
 
     start = time.time()
@@ -153,13 +169,13 @@ def check_sql_similarity(generated: str, expected: str) -> dict:
     }
 
 
-def execute_expected_sql(backend_url: str, expected_sql: str, timeout: int) -> list:
+def execute_expected_sql(backend_url: str, expected_sql: str, timeout: int, domain: str = "hris") -> list:
     """
     Execute the expected SQL via /benchmark/execute to get ground truth results.
     Returns the data rows.
     """
     url = f"{backend_url}/benchmark/execute"
-    payload = json.dumps({"sql": expected_sql}).encode("utf-8")
+    payload = json.dumps({"sql": expected_sql, "domain": domain}).encode("utf-8")
     req = Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
 
     try:
@@ -237,19 +253,27 @@ def compare_results(expected_data: list, generated_data: list) -> str:
 
 # ─── Main Benchmark Runner ──────────────────────────────────────────────────
 
-def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: bool = True, delay: float = DEFAULT_DELAY):
+def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: bool = True, delay: float = DEFAULT_DELAY, domain: str = DEFAULT_DOMAIN):
     """Run the full benchmark suite."""
+
+    # Resolve benchmark file for domain
+    if domain not in BENCHMARK_FILES:
+        print(f"\n❌ Unknown domain '{domain}'. Available: {', '.join(BENCHMARK_FILES.keys())}")
+        sys.exit(1)
+
+    benchmark_path = BENCHMARK_FILES[domain]
 
     # Load benchmark
     print(f"\n{'='*70}")
     print("  TEXT-TO-SQL EVALUATION BENCHMARK")
     print(f"{'='*70}")
 
-    benchmark = load_benchmark(BENCHMARK_FILE)
+    benchmark = load_benchmark(benchmark_path)
     questions = benchmark["questions"]
     total = len(questions)
 
-    print(f"\n  Questions:   {total}")
+    print(f"\n  Domain:      {domain}")
+    print(f"  Questions:   {total}")
     print(f"  Backend:     {backend_url}")
     print(f"  Timeout:     {timeout}s per question")
     print(f"  Delay:       {delay}s between questions (rate limit protection)")
@@ -262,9 +286,17 @@ def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: boo
         health_req = Request(f"{backend_url}/health", method="GET")
         with urlopen(health_req, timeout=10) as resp:
             health = json.loads(resp.read().decode("utf-8"))
-            print(f"  Backend:   {'✅' if health.get('db') == 'connected' else '❌'} DB")
+            db_statuses = health.get("databases") or {}
+            if isinstance(db_statuses, dict) and db_statuses:
+                connected = all(status == "connected" for status in db_statuses.values())
+                status_line = "✅" if connected else "❌"
+                print(f"  Backend:   {status_line} DB ({', '.join(f'{name}:{status}' for name, status in db_statuses.items())})")
+            else:
+                connected = health.get("db") == "connected"
+                print(f"  Backend:   {'✅' if connected else '❌'} DB")
+
             print(f"  AI Service: {'✅' if health.get('ai_service') else '❌'} AI")
-            if health.get("db") != "connected":
+            if not connected:
                 print("\n❌ Database not connected. Aborting.")
                 sys.exit(1)
     except Exception as e:
@@ -272,7 +304,6 @@ def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: boo
         print(f"   Make sure backend is running at {backend_url}")
         sys.exit(1)
 
-    # Run each question
     results = []
     passed = 0
     failed = 0
@@ -306,7 +337,7 @@ def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: boo
         print(f"{progress} Q{qid:02d} ({difficulty:6s}) {question[:55]}...", end=" ", flush=True)
 
         # Ask the backend
-        response = ask_question(backend_url, question, timeout)
+        response = ask_question(backend_url, question, timeout, domain=domain)
         generated_sql = response["generated_sql"]
         response_ms = response["response_ms"]
         error = response["error"]
@@ -319,7 +350,7 @@ def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: boo
         sql_similarity = check_sql_similarity(generated_sql, expected_sql) if execution_success else {}
 
         # Execute expected SQL to get ground truth results
-        expected_data = execute_expected_sql(backend_url, expected_sql, timeout)
+        expected_data = execute_expected_sql(backend_url, expected_sql, timeout, domain=domain)
 
         # Compare generated results with expected results (data-level accuracy)
         data_match = "mismatch"
@@ -426,6 +457,7 @@ def run_benchmark(backend_url: str, timeout: int, output_path: str, verbose: boo
     report = {
         "metadata": {
             "benchmark_version": benchmark["metadata"]["version"],
+            "domain": domain,
             "run_date": datetime.now().isoformat(),
             "backend_url": backend_url,
             "total_questions": total,
@@ -461,7 +493,8 @@ if __name__ == "__main__":
         epilog="""
 Examples:
   python run_benchmark.py
-  python run_benchmark.py --backend-url http://localhost:8080
+  python run_benchmark.py --domain smartcity
+  python run_benchmark.py --backend-url http://localhost:8080 --domain hris
   python run_benchmark.py --output results.json --timeout 120
   python run_benchmark.py --quiet   # minimal output
         """,
@@ -480,7 +513,7 @@ Examples:
     parser.add_argument(
         "--output",
         default=DEFAULT_OUTPUT,
-        help=f"Output JSON file path (default: {DEFAULT_OUTPUT})",
+        help=f"Output JSON file path (default: domain-specific output)",
     )
     parser.add_argument(
         "--quiet",
@@ -493,6 +526,59 @@ Examples:
         default=DEFAULT_DELAY,
         help=f"Delay between questions in seconds (default: {DEFAULT_DELAY}s, set to 0 to disable)",
     )
+    parser.add_argument(
+        "--domain",
+        default=DEFAULT_DOMAIN,
+        choices=list(BENCHMARK_FILES.keys()) + ["all"],
+        help=f"Domain to benchmark (default: {DEFAULT_DOMAIN})",
+    )
 
     args = parser.parse_args()
-    run_benchmark(args.backend_url, args.timeout, args.output, verbose=not args.quiet, delay=args.delay)
+    verbose = not args.quiet
+
+    domains_to_run = ALL_DOMAINS if args.domain == "all" else [args.domain]
+
+    # Print overall header when running all domains
+    if len(domains_to_run) > 1:
+        print(f"\n{'#'*70}")
+        print("  MULTI-DOMAIN BENCHMARK RUNNER")
+        print(f"  Domains to run: {', '.join(domains_to_run)}")
+        print(f"  Results will be saved to domain-specific files.")
+        print(f"{'#'*70}")
+
+    all_reports = {}
+    for dom in domains_to_run:
+        output = DOMAIN_OUTPUT.get(dom, DEFAULT_OUTPUT)
+        report = run_benchmark(
+            backend_url=args.backend_url,
+            timeout=args.timeout,
+            output_path=output,
+            verbose=verbose,
+            delay=args.delay,
+            domain=dom,
+        )
+        all_reports[dom] = report
+
+    # Print combined summary when running all domains
+    if len(all_reports) > 1:
+        print(f"\n{'#'*70}")
+        print("  COMBINED SUMMARY — ALL DOMAINS")
+        print(f"{'#'*70}")
+        print(f"\n  {'Domain':<15} {'Questions':>9} {'Exec %':>8} {'Result %':>9} {'Exact':>7} {'Errors':>8} {'Avg (ms)':>10}")
+        print(f"  {'-'*68}")
+        for dom, rpt in all_reports.items():
+            s = rpt["summary"]
+            print(f"  {dom:<15} {rpt['metadata']['total_questions']:>9} "
+                  f"{s['execution_accuracy_pct']:>7.1f}% "
+                  f"{s['result_accuracy_pct']:>8.1f}% "
+                  f"{s['exact_match_count']:>7} "
+                  f"{s['error_count']:>8} "
+                  f"{s['avg_response_ms']:>9.0f}")
+
+        total_q = sum(r["metadata"]["total_questions"] for r in all_reports.values())
+        total_errors = sum(r["summary"]["error_count"] for r in all_reports.values())
+        total_passed_pct = sum(r["summary"]["result_accuracy_pct"] for r in all_reports.values()) / len(all_reports)
+        print(f"\n  Total questions across all domains: {total_q}")
+        print(f"  Average result accuracy: {total_passed_pct:.1f}%")
+        print(f"  Total errors: {total_errors}")
+        print(f"{'#'*70}\n")

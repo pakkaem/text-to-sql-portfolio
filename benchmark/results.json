@@ -1,7 +1,8 @@
 {
   "metadata": {
     "benchmark_version": "1.0",
-    "run_date": "2026-06-17T14:50:11.369845",
+    "domain": "hris",
+    "run_date": "2026-06-19T10:21:01.436053",
     "backend_url": "http://localhost:8080",
     "total_questions": 50
   },
@@ -10,8 +11,8 @@
     "result_accuracy_pct": 50.0,
     "exact_match_count": 0,
     "error_count": 0,
-    "avg_response_ms": 908.0,
-    "total_time_ms": 45394
+    "avg_response_ms": 651.0,
+    "total_time_ms": 32541
   },
   "stats_by_difficulty": {
     "easy": {
@@ -82,7 +83,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 1065,
+      "response_ms": 743,
       "error": null
     },
     {
@@ -104,7 +105,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 834,
+      "response_ms": 619,
       "error": null
     },
     {
@@ -126,7 +127,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 769,
+      "response_ms": 471,
       "error": null
     },
     {
@@ -149,7 +150,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 716,
+      "response_ms": 828,
       "error": null
     },
     {
@@ -171,7 +172,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 2045,
+      "response_ms": 1040,
       "error": null
     },
     {
@@ -193,7 +194,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 1958,
+      "response_ms": 412,
       "error": null
     },
     {
@@ -216,7 +217,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 661,
+      "response_ms": 1146,
       "error": null
     },
     {
@@ -240,7 +241,7 @@
           "COUNT(*)"
         ]
       },
-      "response_ms": 1273,
+      "response_ms": 641,
       "error": null
     },
     {
@@ -264,7 +265,7 @@
           "COUNT(*)"
         ]
       },
-      "response_ms": 650,
+      "response_ms": 743,
       "error": null
     },
     {
@@ -285,11 +286,11 @@
           "EMPLOYEES"
         ],
         "keywords_missing": [
-          "EMAIL",
-          "NAME,"
+          "NAME,",
+          "EMAIL"
         ]
       },
-      "response_ms": 3035,
+      "response_ms": 1448,
       "error": null
     },
     {
@@ -307,13 +308,13 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "'2023-12-31'",
+          "EMPLOYEES",
           "HIRE_DATE",
-          "EMPLOYEES"
+          "'2023-12-31'"
         ],
         "keywords_missing": []
       },
-      "response_ms": 517,
+      "response_ms": 629,
       "error": null
     },
     {
@@ -332,12 +333,12 @@
         "keyword_match_ratio": 1.0,
         "keywords_found": [
           "SALARY",
-          "8000",
-          "EMPLOYEES"
+          "EMPLOYEES",
+          "8000"
         ],
         "keywords_missing": []
       },
-      "response_ms": 740,
+      "response_ms": 1485,
       "error": null
     },
     {
@@ -361,7 +362,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 449,
+      "response_ms": 530,
       "error": null
     },
     {
@@ -370,7 +371,7 @@
       "difficulty": "easy",
       "question": "List employees who are Software Engineers",
       "expected_sql": "SELECT * FROM employees WHERE job_title = 'Software Engineer'",
-      "generated_sql": "SELECT e.name FROM employees e WHERE e.job_title = 'Software Engineer' LIMIT 100",
+      "generated_sql": "SELECT name FROM employees WHERE job_title = 'Software Engineer' LIMIT 100",
       "execution_success": true,
       "data_match": "exact_match",
       "expected_data_count": 0,
@@ -379,14 +380,14 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "'SOFTWARE",
-          "ENGINEER'",
           "JOB_TITLE",
-          "EMPLOYEES"
+          "'SOFTWARE",
+          "EMPLOYEES",
+          "ENGINEER'"
         ],
         "keywords_missing": []
       },
-      "response_ms": 540,
+      "response_ms": 1130,
       "error": null
     },
     {
@@ -404,13 +405,13 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
+          "'ABSENT'",
           "ATTENDANCE_LOGS",
-          "STATUS",
-          "'ABSENT'"
+          "STATUS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 489,
+      "response_ms": 553,
       "error": null
     },
     {
@@ -434,7 +435,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 736,
+      "response_ms": 561,
       "error": null
     },
     {
@@ -452,13 +453,13 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "NAME",
           "'A%'",
+          "NAME",
           "EMPLOYEES"
         ],
         "keywords_missing": []
       },
-      "response_ms": 540,
+      "response_ms": 709,
       "error": null
     },
     {
@@ -477,12 +478,12 @@
         "keyword_match_ratio": 1.0,
         "keywords_found": [
           "100000",
-          "PROJECTS",
-          "BUDGET"
+          "BUDGET",
+          "PROJECTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 542,
+      "response_ms": 602,
       "error": null
     },
     {
@@ -501,11 +502,11 @@
         "keyword_match_ratio": 0.0,
         "keywords_found": [],
         "keywords_missing": [
-          "AVG(SALARY)",
-          "EMPLOYEES"
+          "EMPLOYEES",
+          "AVG(SALARY)"
         ]
       },
-      "response_ms": 760,
+      "response_ms": 452,
       "error": null
     },
     {
@@ -523,12 +524,12 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "PROJECTS",
-          "SUM(BUDGET)"
+          "SUM(BUDGET)",
+          "PROJECTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 963,
+      "response_ms": 590,
       "error": null
     },
     {
@@ -546,15 +547,15 @@
         "exact_match": false,
         "keyword_match_ratio": 0.5,
         "keywords_found": [
-          "EMPLOYEES",
-          "DEPARTMENT_ID"
+          "DEPARTMENT_ID",
+          "EMPLOYEES"
         ],
         "keywords_missing": [
           "COUNT(*)",
           "DEPARTMENT_ID,"
         ]
       },
-      "response_ms": 790,
+      "response_ms": 459,
       "error": null
     },
     {
@@ -572,15 +573,15 @@
         "exact_match": false,
         "keyword_match_ratio": 0.5,
         "keywords_found": [
-          "EMPLOYEES",
-          "DEPARTMENT_ID"
+          "DEPARTMENT_ID",
+          "EMPLOYEES"
         ],
         "keywords_missing": [
-          "AVG(SALARY)",
-          "DEPARTMENT_ID,"
+          "DEPARTMENT_ID,",
+          "AVG(SALARY)"
         ]
       },
-      "response_ms": 1021,
+      "response_ms": 509,
       "error": null
     },
     {
@@ -603,7 +604,7 @@
           "EMPLOYEES"
         ]
       },
-      "response_ms": 1010,
+      "response_ms": 452,
       "error": null
     },
     {
@@ -626,7 +627,7 @@
           "EMPLOYEES"
         ]
       },
-      "response_ms": 676,
+      "response_ms": 413,
       "error": null
     },
     {
@@ -644,15 +645,15 @@
         "exact_match": false,
         "keyword_match_ratio": 0.75,
         "keywords_found": [
-          "PROJECTS",
           "STATUS,",
+          "PROJECTS",
           "STATUS"
         ],
         "keywords_missing": [
           "COUNT(*)"
         ]
       },
-      "response_ms": 555,
+      "response_ms": 440,
       "error": null
     },
     {
@@ -675,7 +676,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 1024,
+      "response_ms": 419,
       "error": null
     },
     {
@@ -698,7 +699,7 @@
         ],
         "keywords_missing": []
       },
-      "response_ms": 732,
+      "response_ms": 401,
       "error": null
     },
     {
@@ -724,7 +725,7 @@
           "COUNT(*)"
         ]
       },
-      "response_ms": 563,
+      "response_ms": 400,
       "error": null
     },
     {
@@ -743,15 +744,15 @@
         "keyword_match_ratio": 1.0,
         "keywords_found": [
           "E.NAME,",
-          "EMPLOYEES",
-          "DEPARTMENTS",
-          "E.DEPARTMENT_ID",
           "D.ID",
-          "D.NAME"
+          "E.DEPARTMENT_ID",
+          "EMPLOYEES",
+          "D.NAME",
+          "DEPARTMENTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 481,
+      "response_ms": 543,
       "error": null
     },
     {
@@ -769,18 +770,18 @@
         "exact_match": false,
         "keyword_match_ratio": 0.857,
         "keywords_found": [
+          "D.ID",
+          "E.DEPARTMENT_ID",
           "EMPLOYEES",
           "'ENGINEERING'",
-          "DEPARTMENTS",
-          "E.DEPARTMENT_ID",
-          "D.ID",
-          "D.NAME"
+          "D.NAME",
+          "DEPARTMENTS"
         ],
         "keywords_missing": [
           "E.*"
         ]
       },
-      "response_ms": 744,
+      "response_ms": 605,
       "error": null
     },
     {
@@ -798,21 +799,21 @@
         "exact_match": false,
         "keyword_match_ratio": 0.8,
         "keywords_found": [
-          "EP.PROJECT_ID",
           "E.NAME,",
+          "P.ID",
           "EMPLOYEES",
-          "E.ID",
-          "EP.EMPLOYEE_ID",
           "PROJECTS",
-          "EMPLOYEE_PROJECTS",
-          "P.ID"
+          "E.ID",
+          "EP.PROJECT_ID",
+          "EP.EMPLOYEE_ID",
+          "EMPLOYEE_PROJECTS"
         ],
         "keywords_missing": [
-          "EP.ROLE",
-          "P.PROJECT_NAME,"
+          "P.PROJECT_NAME,",
+          "EP.ROLE"
         ]
       },
-      "response_ms": 760,
+      "response_ms": 474,
       "error": null
     },
     {
@@ -831,17 +832,17 @@
         "keyword_match_ratio": 1.0,
         "keywords_found": [
           "E.NAME,",
+          "EMPLOYEES",
+          "P.BONUS",
           "P.MONTH_YEAR,",
           "P.BASE_SALARY,",
-          "EMPLOYEES",
           "PAYROLL",
           "E.ID",
-          "P.EMPLOYEE_ID",
-          "P.BONUS"
+          "P.EMPLOYEE_ID"
         ],
         "keywords_missing": []
       },
-      "response_ms": 947,
+      "response_ms": 557,
       "error": null
     },
     {
@@ -860,17 +861,17 @@
         "keyword_match_ratio": 0.429,
         "keywords_found": [
           "EMPLOYEES",
-          "E.ID",
-          "ATTENDANCE_LOGS"
+          "ATTENDANCE_LOGS",
+          "E.ID"
         ],
         "keywords_missing": [
           "E.NAME,",
-          "A.STATUS",
+          "A.LOG_DATE,",
           "A.EMPLOYEE_ID",
-          "A.LOG_DATE,"
+          "A.STATUS"
         ]
       },
-      "response_ms": 921,
+      "response_ms": 450,
       "error": null
     },
     {
@@ -888,23 +889,23 @@
         "exact_match": false,
         "keyword_match_ratio": 0.833,
         "keywords_found": [
-          "EP.PROJECT_ID",
-          "'WEBSITE",
-          "EMPLOYEES",
-          "E.ID",
-          "EP.EMPLOYEE_ID",
-          "PROJECTS",
-          "EMPLOYEE_PROJECTS",
-          "REDESIGN'",
+          "P.PROJECT_NAME",
           "P.ID",
-          "P.PROJECT_NAME"
+          "EMPLOYEES",
+          "PROJECTS",
+          "'WEBSITE",
+          "E.ID",
+          "REDESIGN'",
+          "EP.PROJECT_ID",
+          "EP.EMPLOYEE_ID",
+          "EMPLOYEE_PROJECTS"
         ],
         "keywords_missing": [
           "E.NAME,",
           "EP.ROLE"
         ]
       },
-      "response_ms": 478,
+      "response_ms": 435,
       "error": null
     },
     {
@@ -922,19 +923,19 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "EP.PROJECT_ID",
           "E.NAME,",
+          "P.ID",
           "EMPLOYEES",
           "SUM(P.BUDGET)",
-          "E.ID",
-          "EP.EMPLOYEE_ID",
           "PROJECTS",
-          "EMPLOYEE_PROJECTS",
-          "P.ID"
+          "E.ID",
+          "EP.PROJECT_ID",
+          "EP.EMPLOYEE_ID",
+          "EMPLOYEE_PROJECTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 771,
+      "response_ms": 705,
       "error": null
     },
     {
@@ -952,16 +953,16 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "COUNT(E.ID)",
-          "EMPLOYEES",
-          "DEPARTMENTS",
-          "E.DEPARTMENT_ID",
           "D.ID",
-          "D.NAME,"
+          "E.DEPARTMENT_ID",
+          "EMPLOYEES",
+          "D.NAME,",
+          "COUNT(E.ID)",
+          "DEPARTMENTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 606,
+      "response_ms": 461,
       "error": null
     },
     {
@@ -979,21 +980,21 @@
         "exact_match": false,
         "keyword_match_ratio": 0.9,
         "keywords_found": [
-          "EP.PROJECT_ID",
           "E.NAME,",
+          "P.ID",
           "EMPLOYEES",
-          "E.ID",
-          "EP.EMPLOYEE_ID",
           "PROJECTS",
-          "EMPLOYEE_PROJECTS",
+          "E.ID",
           "EP.ROLE",
-          "P.ID"
+          "EP.PROJECT_ID",
+          "EP.EMPLOYEE_ID",
+          "EMPLOYEE_PROJECTS"
         ],
         "keywords_missing": [
           "P.PROJECT_NAME,"
         ]
       },
-      "response_ms": 568,
+      "response_ms": 626,
       "error": null
     },
     {
@@ -1011,17 +1012,17 @@
         "exact_match": false,
         "keyword_match_ratio": 0.833,
         "keywords_found": [
-          "EMPLOYEES",
-          "DEPARTMENTS",
-          "E.DEPARTMENT_ID",
           "D.ID",
-          "D.NAME,"
+          "E.DEPARTMENT_ID",
+          "EMPLOYEES",
+          "D.NAME,",
+          "DEPARTMENTS"
         ],
         "keywords_missing": [
           "AVG(E.SALARY)"
         ]
       },
-      "response_ms": 576,
+      "response_ms": 568,
       "error": null
     },
     {
@@ -1040,15 +1041,15 @@
         "keyword_match_ratio": 1.0,
         "keywords_found": [
           "E.NAME,",
-          "COUNT(EP.PROJECT_ID)",
           "EMPLOYEES",
+          "COUNT(EP.PROJECT_ID)",
           "E.ID",
           "EP.EMPLOYEE_ID",
           "EMPLOYEE_PROJECTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 666,
+      "response_ms": 606,
       "error": null
     },
     {
@@ -1057,7 +1058,7 @@
       "difficulty": "hard",
       "question": "Which department has the highest average salary?",
       "expected_sql": "SELECT d.name, AVG(e.salary) as avg_salary FROM departments d JOIN employees e ON d.id = e.department_id GROUP BY d.id ORDER BY avg_salary DESC LIMIT 1",
-      "generated_sql": "SELECT d.name FROM employees e JOIN departments d ON e.department_id = d.id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id HAVING AVG(p.base_salary) = (SELECT MAX(avg_salary) FROM (SELECT AVG(p.base_salary) AS avg_salary FROM employees e JOIN payroll p ON e.id = p.employee_id GROUP BY e.department_id) AS subquery) LIMIT 100",
+      "generated_sql": "SELECT d.name FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id HAVING AVG(p.base_salary) = (SELECT MAX(avg_salary) FROM (SELECT AVG(p.base_salary) AS avg_salary FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id)) LIMIT 100",
       "execution_success": true,
       "data_match": "mismatch",
       "expected_data_count": 0,
@@ -1066,18 +1067,18 @@
         "exact_match": false,
         "keyword_match_ratio": 0.714,
         "keywords_found": [
-          "EMPLOYEES",
           "AVG_SALARY",
-          "DEPARTMENTS",
+          "D.ID",
           "E.DEPARTMENT_ID",
-          "D.ID"
+          "EMPLOYEES",
+          "DEPARTMENTS"
         ],
         "keywords_missing": [
           "AVG(E.SALARY)",
           "D.NAME,"
         ]
       },
-      "response_ms": 848,
+      "response_ms": 646,
       "error": null
     },
     {
@@ -1095,13 +1096,13 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "SALARY",
           "NAME,",
+          "SALARY",
           "EMPLOYEES"
         ],
         "keywords_missing": []
       },
-      "response_ms": 644,
+      "response_ms": 577,
       "error": null
     },
     {
@@ -1119,19 +1120,19 @@
         "exact_match": false,
         "keyword_match_ratio": 0.75,
         "keywords_found": [
-          "EMPLOYEE_ID",
           "EMPLOYEES",
-          "E.ID",
           "ATTENDANCE_LOGS",
+          "STATUS",
           "E.NAME",
-          "STATUS"
+          "E.ID",
+          "EMPLOYEE_ID"
         ],
         "keywords_missing": [
-          "(SELECT",
-          "'ABSENT')"
+          "'ABSENT')",
+          "(SELECT"
         ]
       },
-      "response_ms": 723,
+      "response_ms": 963,
       "error": null
     },
     {
@@ -1140,7 +1141,7 @@
       "difficulty": "hard",
       "question": "What is the total payroll cost per department?",
       "expected_sql": "SELECT d.name, SUM(p.base_salary + p.bonus) FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id",
-      "generated_sql": "SELECT d.name, SUM(p.base_salary + p.bonus) FROM payroll p JOIN employees e ON p.employee_id = e.id JOIN departments d ON e.department_id = d.id GROUP BY d.name LIMIT 100",
+      "generated_sql": "SELECT d.name, SUM(p.base_salary + p.bonus) FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id LIMIT 100",
       "execution_success": true,
       "data_match": "exact_match",
       "expected_data_count": 6,
@@ -1150,19 +1151,19 @@
         "keyword_match_ratio": 1.0,
         "keywords_found": [
           "SUM(P.BASE_SALARY",
+          "D.ID",
+          "P.BONUS)",
           "EMPLOYEES",
+          "E.DEPARTMENT_ID",
+          "D.NAME,",
           "PAYROLL",
           "E.ID",
           "P.EMPLOYEE_ID",
-          "P.BONUS)",
-          "DEPARTMENTS",
-          "E.DEPARTMENT_ID",
-          "D.ID",
-          "D.NAME,"
+          "DEPARTMENTS"
         ],
         "keywords_missing": []
       },
-      "response_ms": 913,
+      "response_ms": 564,
       "error": null
     },
     {
@@ -1171,7 +1172,7 @@
       "difficulty": "hard",
       "question": "Which project has the most employees assigned to it?",
       "expected_sql": "SELECT p.project_name, COUNT(ep.employee_id) as employee_count FROM projects p JOIN employee_projects ep ON p.id = ep.project_id GROUP BY p.id ORDER BY employee_count DESC LIMIT 1",
-      "generated_sql": "SELECT p.project_name, COUNT(ep.employee_id) FROM projects p JOIN employee_projects ep ON p.id = ep.project_id GROUP BY p.id HAVING COUNT(ep.employee_id) = (SELECT MAX(cnt) FROM (SELECT COUNT(employee_id) AS cnt FROM employee_projects GROUP BY project_id) AS sub) LIMIT 100",
+      "generated_sql": "SELECT p.project_name, COUNT(ep.employee_id) FROM projects p JOIN employee_projects ep ON p.id = ep.project_id GROUP BY p.id HAVING COUNT(ep.employee_id) = (SELECT MAX(cnt) FROM (SELECT project_id, COUNT(employee_id) AS cnt FROM employee_projects GROUP BY project_id) AS sub) LIMIT 100",
       "execution_success": true,
       "data_match": "exact_match",
       "expected_data_count": 1,
@@ -1180,18 +1181,18 @@
         "exact_match": false,
         "keyword_match_ratio": 0.857,
         "keywords_found": [
-          "EP.PROJECT_ID",
-          "COUNT(EP.EMPLOYEE_ID)",
-          "PROJECTS",
-          "EMPLOYEE_PROJECTS",
           "P.ID",
-          "P.PROJECT_NAME,"
+          "PROJECTS",
+          "P.PROJECT_NAME,",
+          "EP.PROJECT_ID",
+          "EMPLOYEE_PROJECTS",
+          "COUNT(EP.EMPLOYEE_ID)"
         ],
         "keywords_missing": [
           "EMPLOYEE_COUNT"
         ]
       },
-      "response_ms": 857,
+      "response_ms": 621,
       "error": null
     },
     {
@@ -1209,11 +1210,11 @@
         "exact_match": false,
         "keyword_match_ratio": 0.625,
         "keywords_found": [
-          "EMPLOYEES",
           "6000",
-          "DEPARTMENTS",
+          "D.ID",
           "E.DEPARTMENT_ID",
-          "D.ID"
+          "EMPLOYEES",
+          "DEPARTMENTS"
         ],
         "keywords_missing": [
           "AVG_SALARY",
@@ -1221,7 +1222,7 @@
           "D.NAME,"
         ]
       },
-      "response_ms": 618,
+      "response_ms": 690,
       "error": null
     },
     {
@@ -1240,20 +1241,20 @@
         "keyword_match_ratio": 0.5,
         "keywords_found": [
           "EMPLOYEES",
-          "E.ID",
-          "COUNT(DISTINCT",
           "ATTENDANCE_LOGS",
-          "E.NAME"
+          "E.NAME",
+          "E.ID",
+          "COUNT(DISTINCT"
         ],
         "keywords_missing": [
-          "('PRESENT',",
-          "A.STATUS)",
-          "A.STATUS",
+          "'ABSENT')",
           "A.EMPLOYEE_ID",
-          "'ABSENT')"
+          "A.STATUS",
+          "('PRESENT',",
+          "A.STATUS)"
         ]
       },
-      "response_ms": 664,
+      "response_ms": 727,
       "error": null
     },
     {
@@ -1271,19 +1272,19 @@
         "exact_match": false,
         "keyword_match_ratio": 1.0,
         "keywords_found": [
-          "NAME,",
-          "DEPARTMENT_ID,",
-          "EMPLOYEES",
-          "SALARY",
-          "DESC)",
-          "SALARY,",
           "RANK()",
+          "EMPLOYEES",
+          "SALARY,",
+          "SALARY",
+          "DEPARTMENT_ID,",
           "DEPARTMENT_ID",
-          "(PARTITION"
+          "(PARTITION",
+          "NAME,",
+          "DESC)"
         ],
         "keywords_missing": []
       },
-      "response_ms": 855,
+      "response_ms": 694,
       "error": null
     },
     {
@@ -1301,21 +1302,21 @@
         "exact_match": false,
         "keyword_match_ratio": 0.6,
         "keywords_found": [
-          "MONTH_YEAR,",
-          "PAYROLL",
           "BONUS)",
-          "BASE_SALARY",
+          "BONUS",
+          "PAYROLL",
           "SUM(BASE_SALARY",
-          "BONUS"
+          "BASE_SALARY",
+          "MONTH_YEAR,"
         ],
         "keywords_missing": [
           "(ORDER",
           "RUNNING_TOTAL",
-          "MONTH_YEAR)",
-          "TOTAL,"
+          "TOTAL,",
+          "MONTH_YEAR)"
         ]
       },
-      "response_ms": 1251,
+      "response_ms": 506,
       "error": null
     },
     {
@@ -1324,7 +1325,7 @@
       "difficulty": "hard",
       "question": "Find the highest paid employee in each department using a subquery",
       "expected_sql": "SELECT e.name, e.salary, e.department_id FROM employees e WHERE e.salary = (SELECT MAX(e2.salary) FROM employees e2 WHERE e2.department_id = e.department_id)",
-      "generated_sql": "SELECT e.name, p.base_salary FROM employees e JOIN payroll p ON e.id = p.employee_id WHERE (e.department_id, p.base_salary) IN ( SELECT e.department_id, MAX(p.base_salary) FROM employees e JOIN payroll p ON e.id = p.employee_id GROUP BY e.department_id ) LIMIT 100",
+      "generated_sql": "SELECT e.name, e.department_id, p.base_salary FROM employees e JOIN payroll p ON e.id = p.employee_id WHERE (e.department_id, p.base_salary) IN ( SELECT e.department_id, MAX(p.base_salary) FROM employees e JOIN payroll p ON e.id = p.employee_id GROUP BY e.department_id ) LIMIT 100",
       "execution_success": true,
       "data_match": "mismatch",
       "expected_data_count": 0,
@@ -1334,19 +1335,19 @@
         "keyword_match_ratio": 0.333,
         "keywords_found": [
           "E.NAME,",
-          "EMPLOYEES",
-          "E.DEPARTMENT_ID"
+          "E.DEPARTMENT_ID",
+          "EMPLOYEES"
         ],
         "keywords_missing": [
-          "(SELECT",
-          "E.SALARY,",
-          "MAX(E2.SALARY)",
-          "E.DEPARTMENT_ID)",
+          "E2.DEPARTMENT_ID",
           "E.SALARY",
-          "E2.DEPARTMENT_ID"
+          "E.SALARY,",
+          "E.DEPARTMENT_ID)",
+          "(SELECT",
+          "MAX(E2.SALARY)"
         ]
       },
-      "response_ms": 879,
+      "response_ms": 798,
       "error": null
     },
     {
@@ -1355,7 +1356,7 @@
       "difficulty": "hard",
       "question": "Show department budgets compared to their total employee salaries using a CTE",
       "expected_sql": "WITH dept_salary AS (SELECT department_id, SUM(salary) as total_salary FROM employees GROUP BY department_id) SELECT d.name, d.budget, ds.total_salary FROM departments d JOIN dept_salary ds ON d.id = ds.department_id",
-      "generated_sql": "WITH department_budgets AS ( SELECT d.id, d.name, SUM(p.budget) AS total_budget FROM departments d JOIN employee_projects ep ON d.id = (SELECT department_id FROM employees WHERE id = ep.employee_id) JOIN projects p ON ep.project_id = p.id GROUP BY d.id, d.name ), total_salaries AS ( SELECT d.id, d.name, SUM(p.base_salary) AS total_salary FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id, d.name ) SELECT db.name, db.total_budget, ts.total_salary FROM department_budgets db JOIN total_salaries ts ON db.id = ts.id LIMIT 100",
+      "generated_sql": "WITH department_budgets AS ( SELECT d.id, d.name, SUM(p.budget) AS total_budget FROM departments d JOIN employees e ON d.id = e.department_id JOIN employee_projects ep ON e.id = ep.employee_id JOIN projects p ON ep.project_id = p.id GROUP BY d.id, d.name ), department_salaries AS ( SELECT d.id, d.name, SUM(p.base_salary) AS total_salary FROM departments d JOIN employees e ON d.id = e.department_id JOIN payroll p ON e.id = p.employee_id GROUP BY d.id, d.name ) SELECT db.name, db.total_budget, ds.total_salary FROM department_budgets db JOIN department_salaries ds ON db.id = ds.id LIMIT 100",
       "execution_success": true,
       "data_match": "mismatch",
       "expected_data_count": 0,
@@ -1364,24 +1365,24 @@
         "exact_match": false,
         "keyword_match_ratio": 0.462,
         "keywords_found": [
-          "(SELECT",
+          "D.ID",
+          "DS.TOTAL_SALARY",
           "EMPLOYEES",
-          "DEPARTMENTS",
           "TOTAL_SALARY",
           "D.NAME,",
-          "D.ID"
+          "DEPARTMENTS"
         ],
         "keywords_missing": [
-          "D.BUDGET,",
           "DEPT_SALARY",
-          "DS.TOTAL_SALARY",
-          "DEPARTMENT_ID,",
           "DS.DEPARTMENT_ID",
-          "SUM(SALARY)",
-          "DEPARTMENT_ID)"
+          "DEPARTMENT_ID,",
+          "DEPARTMENT_ID)",
+          "(SELECT",
+          "D.BUDGET,",
+          "SUM(SALARY)"
         ]
       },
-      "response_ms": 3971,
+      "response_ms": 900,
       "error": null
     }
   ]
