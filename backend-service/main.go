@@ -34,6 +34,21 @@ type AIResponse struct {
 	SQLQuery string `json:"sql_query"`
 }
 
+// Struktur request untuk AI Insight
+type AIInsightRequest struct {
+	Question  string                   `json:"question"`
+	SQLQuery  string                   `json:"sql_query"`
+	Data      []map[string]interface{} `json:"data"`
+	Domain    string                   `json:"domain"`
+}
+
+// Struktur response dari AI Insight
+type AIInsightResponse struct {
+	InsightSummary     string   `json:"insight_summary"`
+	BusinessExplanation string   `json:"business_explanation"`
+	TopFindings        []string `json:"top_findings"`
+}
+
 // Struktur untuk retry: request ke AI dengan error feedback
 type AIRetryRequest struct {
 	SchemaContext string `json:"schema_context"`
@@ -138,6 +153,37 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+// callAIInsightService mengirim request ke AI service untuk menghasilkan insight bisnis
+func callAIInsightService(aiServiceURL string, reqBody AIInsightRequest) (*AIInsightResponse, error) {
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("gagal marshal insight request: %w", err)
+	}
+
+	aiResp, err := http.Post(aiServiceURL+"/generate-insight", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("gagal terhubung ke AI Service (insight): %w", err)
+	}
+	defer aiResp.Body.Close()
+
+	if aiResp.StatusCode != 200 {
+		errBody, _ := io.ReadAll(aiResp.Body)
+		return nil, fmt.Errorf("AI Insight Service error (status %d): %s", aiResp.StatusCode, string(errBody))
+	}
+
+	bodyBytes, err := io.ReadAll(aiResp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membaca insight response: %w", err)
+	}
+
+	var insightResult AIInsightResponse
+	if err := json.Unmarshal(bodyBytes, &insightResult); err != nil {
+		return nil, fmt.Errorf("gagal parse insight response: %w", err)
+	}
+
+	return &insightResult, nil
 }
 
 // callAIService mengirim request ke AI service dan mengembalikan generated SQL
@@ -557,16 +603,42 @@ func main() {
 			generatedSQL = retrySQL
 		}
 
-		// --- FASE 3: KEMBALIKAN HASIL KE USER ---
+		// --- FASE 3: GENERATE AI INSIGHT ---
+		var insightResponse *AIInsightResponse
+		if len(finalResult) > 0 {
+			insightReq := AIInsightRequest{
+				Question: req.Question,
+				SQLQuery: generatedSQL,
+				Data:     finalResult,
+				Domain:   req.Domain,
+			}
+			insight, insightErr := callAIInsightService(aiServiceURL, insightReq)
+			if insightErr != nil {
+				log.Printf("WARNING: Gagal generate insight (non-fatal): %v", insightErr)
+				// Insight is optional — don't fail the whole request
+			} else {
+				insightResponse = insight
+			}
+		}
+
+		// --- FASE 4: KEMBALIKAN HASIL KE USER ---
 		elapsed := time.Since(startTime)
-		c.JSON(http.StatusOK, gin.H{
+		response := gin.H{
 			"question":      req.Question,
 			"domain":        req.Domain,
 			"generated_sql": generatedSQL,
 			"data":          finalResult,
 			"response_time": fmt.Sprintf("%.0fms", float64(elapsed.Milliseconds())),
 			"response_ms":   elapsed.Milliseconds(),
-		})
+		}
+
+		if insightResponse != nil {
+			response["insight_summary"] = insightResponse.InsightSummary
+			response["business_explanation"] = insightResponse.BusinessExplanation
+			response["top_findings"] = insightResponse.TopFindings
+		}
+
+		c.JSON(http.StatusOK, response)
 	})
 
 	log.Printf("Backend Golang berjalan di http://localhost:%s", backendPort)

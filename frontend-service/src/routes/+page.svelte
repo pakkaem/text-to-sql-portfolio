@@ -20,6 +20,12 @@
   let autoCharts = $state([]);
   let showCharts = $state(true);
 
+  // --- AI Insight ---
+  let insightSummary = $state("");
+  let businessExplanation = $state("");
+  let topFindings = $state([]);
+  let showInsight = $state(true);
+
   // --- Domain ---
   let domains = $state([]);
   let currentDomain = $state("hris");
@@ -43,6 +49,9 @@
     sqlExplanation = "";
     errorMsg = "";
     autoCharts = [];
+    insightSummary = "";
+    businessExplanation = "";
+    topFindings = [];
     loadSchema();
     loadHistory();
   }
@@ -221,6 +230,11 @@
       generatedSQL = data.generated_sql;
       resultData = data.data || [];
       responseTime = data.response_time || "";
+
+      // Parse AI Insight data
+      insightSummary = data.insight_summary || "";
+      businessExplanation = data.business_explanation || "";
+      topFindings = data.top_findings || [];
 
       // Start typing animation
       typeSQL(generatedSQL);
@@ -439,6 +453,45 @@
                 title={chartConfig.title}
               />
             {/each}
+          </div>
+        {/if}
+      </section>
+    {/if}
+
+    {#if insightSummary}
+      <!-- AI Insight Summary -->
+      <section class="insight-section">
+        <div class="insight-header">
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/><line x1="10" y1="24" x2="14" y2="24"/></svg>
+            AI Business Insight
+          </h3>
+          <button class="btn-ghost btn-sm" onclick={() => showInsight = !showInsight}>
+            {showInsight ? 'Tutup' : 'Buka'}
+          </button>
+        </div>
+        {#if showInsight}
+          <div class="insight-body">
+            <div class="insight-summary">
+              <span class="insight-icon">🎯</span>
+              <p>{insightSummary}</p>
+            </div>
+            {#if businessExplanation}
+              <div class="insight-explanation">
+                <span class="insight-icon">📊</span>
+                <p>{businessExplanation}</p>
+              </div>
+            {/if}
+            {#if topFindings.length > 0}
+              <div class="insight-findings">
+                <span class="insight-icon">💡</span>
+                <ul>
+                  {#each topFindings as finding}
+                    <li>{finding}</li>
+                  {/each}
+                </ul>
+              </div>
+            {/if}
           </div>
         {/if}
       </section>
@@ -1152,6 +1205,106 @@
   @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  /* Insight Section */
+  .insight-section {
+    background-color: var(--bg-card, white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    margin-bottom: 16px;
+    border-left: 4px solid #8b5cf6;
+    animation: fadeIn 0.3s ease;
+  }
+  .insight-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .insight-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+  }
+  .insight-header h3 svg {
+    color: #8b5cf6;
+  }
+  .insight-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .insight-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    padding: 14px 16px;
+    border-radius: 8px;
+  }
+  :global([data-theme="dark"]) .insight-summary {
+    background: linear-gradient(135deg, #2e1065 0%, #1e1b4b 100%);
+  }
+  .insight-summary p {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #5b21b6;
+    line-height: 1.5;
+  }
+  :global([data-theme="dark"]) .insight-summary p {
+    color: #c4b5fd;
+  }
+  .insight-explanation {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--hover-bg, #f8fafc);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e2e8f0);
+  }
+  .insight-explanation p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary, #475569);
+    line-height: 1.6;
+  }
+  .insight-findings {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0 4px;
+  }
+  .insight-findings ul {
+    margin: 0;
+    padding-left: 18px;
+    list-style: none;
+  }
+  .insight-findings li {
+    font-size: 13px;
+    color: var(--text-secondary, #475569);
+    line-height: 1.6;
+    padding: 2px 0;
+    position: relative;
+  }
+  .insight-findings li::before {
+    content: '▸';
+    color: #8b5cf6;
+    font-weight: 700;
+    position: absolute;
+    left: -16px;
+  }
+  .insight-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
   }
 
   /* Charts Section */

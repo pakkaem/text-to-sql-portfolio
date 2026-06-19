@@ -498,5 +498,153 @@ Jelaskan dengan singkat dan jelas."""
         raise HTTPException(status_code=500, detail=f"Gagal menjelaskan SQL: {str(e)}")
 
 
+# --- ENDPOINT: GENERATE INSIGHT ---
+class InsightRequest(BaseModel):
+    question: str
+    sql_query: str
+    data: list  # List of result rows (dicts)
+    domain: str = "hris"
+
+class InsightResponse(BaseModel):
+    insight_summary: str
+    business_explanation: str
+    top_findings: list[str]
+
+@app.post("/generate-insight", response_model=InsightResponse)
+async def generate_insight(request: InsightRequest):
+    """Generate AI-powered business insights from query results."""
+    try:
+        # Limit data to first 20 rows to keep prompt manageable
+        data_sample = request.data[:20]
+        data_json = json.dumps(data_sample, indent=2, default=str)
+
+        # Count total rows for context
+        total_rows = len(request.data)
+
+        domain_context = ""
+        if request.domain == "hris":
+            domain_context = "Domain ini adalah HRIS (Human Resource Information System) — data karyawan, departemen, payroll, kehadiran, dan proyek."
+        elif request.domain == "smartcity":
+            domain_context = "Domain ini adalah Smart City — data pelanggaran lalu lintas, kamera, jalan, dan wilayah kota."
+
+        system_msg = """Kamu adalah AI Business Analyst. Tugas kamu adalah menganalisis hasil query SQL dan memberikan insight bisnis yang bermakna dalam Bahasa Indonesia.
+
+Kamu HARUS mengembalikan response dalam format JSON yang VALID (tanpa markdown code block):
+{
+  "insight_summary": "Satu kalimat insight utama yang impactful dan actionable",
+  "business_explanation": "Penjelasan 2-3 kalimat tentang apa arti data ini dari sudut pandang bisnis, ditujukan untuk manajer/non-teknis",
+  "top_findings": ["Finding 1", "Finding 2", "Finding 3"]
+}
+
+Rules:
+- insight_summary: Harus singkat, impactful, dan langsung ke poin (maksimal 1 kalimat)
+- business_explanation: Bahasa yang mudah dipahami non-teknis, menjelaskan implikasi bisnis
+- top_findings: Maksimal 3 temuan utama, urutkan dari yang paling penting
+- Jika data kosong, jelaskan bahwa tidak ada data yang ditemukan
+- Selalu dalam Bahasa Indonesia
+- JANGAN gunakan markdown atau code block di response"""
+
+        user_msg = f"""Analisis hasil query berikut:
+
+Pertanyaan User: {request.question}
+
+SQL Query:
+```sql
+{request.sql_query}
+```
+
+{domain_context}
+
+Hasil Data ({total_rows} baris total, showing {len(data_sample)} sample):
+```json
+{data_json}
+```
+
+Berikan analisis bisnis dalam format JSON."""
+
+        if model_mode == "groq":
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ]
+            raw_response = call_groq_api(messages)
+
+            # Parse JSON from response
+            insight_data = _parse_json_response(raw_response)
+            return InsightResponse(
+                insight_summary=insight_data.get("insight_summary", "Tidak dapat menghasilkan insight dari data ini."),
+                business_explanation=insight_data.get("business_explanation", "Data tidak cukup untuk analisis bisnis."),
+                top_findings=insight_data.get("top_findings", ["Tidak ada temuan yang dapat diidentifikasi."]),
+            )
+        else:
+            # Local model mode
+            if not model or not tokenizer:
+                raise HTTPException(status_code=500, detail="Model belum siap diload.")
+
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ]
+
+            if hasattr(tokenizer, "apply_chat_template"):
+                prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            else:
+                prompt = f"<s>[INST] <<SYS>>\n{system_msg}\n<</SYS>>\n\n{user_msg} [/INST]\n"
+
+            inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=500,
+                    temperature=0.3,
+                    do_sample=True,
+                    pad_token_id=tokenizer.eos_token_id
+                )
+            new_tokens = outputs[0][inputs["input_ids"].shape[1]:]
+            raw_response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+
+            insight_data = _parse_json_response(raw_response)
+            return InsightResponse(
+                insight_summary=insight_data.get("insight_summary", "Tidak dapat menghasilkan insight dari data ini."),
+                business_explanation=insight_data.get("business_explanation", "Data tidak cukup untuk analisis bisnis."),
+                top_findings=insight_data.get("top_findings", ["Tidak ada temuan yang dapat diidentifikasi."]),
+            )
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail=f"Groq API error: {e.response.status_code}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal menghasilkan insight: {str(e)}")
+
+
+def _parse_json_response(raw: str) -> dict:
+    """Parse JSON from LLM response, handling markdown code blocks."""
+    text = raw.strip()
+    # Remove markdown code block if present
+    if "```json" in text:
+        text = text.split("```json", 1)[1]
+        text = text.split("```", 1)[0].strip()
+    elif "```" in text:
+        text = text.split("```", 1)[1]
+        text = text.split("```", 1)[0].strip()
+    
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Try to find JSON object in the text
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end > start:
+            try:
+                return json.loads(text[start:end])
+            except json.JSONDecodeError:
+                pass
+        # Fallback
+        return {
+            "insight_summary": text[:200] if text else "Tidak dapat menghasilkan insight.",
+            "business_explanation": "Terjadi kesalahan saat memproses analisis bisnis.",
+            "top_findings": ["Data tidak dapat dianalisis secara otomatis."],
+        }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
