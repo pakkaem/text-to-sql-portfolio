@@ -25,3 +25,6 @@ backend-service/run_seed.py
 # --- OS Files ---
 .DS_Store
 Thumbs.db
+
+# --- Roadmap ---
+ROADMAP.md
