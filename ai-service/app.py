@@ -25,8 +25,8 @@ def _ensure_torch():
         AutoTokenizer = _AT
 
 app = FastAPI(
-    title="HRIS Text-to-SQL API",
-    description="API AI untuk mengubah pertanyaan natural menjadi query SQL."
+    title="Multi-Domain Text-to-SQL API",
+    description="API AI untuk mengubah pertanyaan natural menjadi query SQL — mendukung multiple domain (HRIS, Smart City, dll)."
 )
 
 # --- SKEMA REQUEST & RESPONSE ---
@@ -35,6 +35,7 @@ class QueryRequest(BaseModel):
     question: str
     prev_sql: str = None      # Optional: SQL sebelumnya yang gagal (untuk retry)
     error_msg: str = None     # Optional: Error message dari eksekusi sebelumnya
+    domain: str = "hris"      # Optional: domain database (hris, smartcity, dll)
 
 class QueryResponse(BaseModel):
     sql_query: str
@@ -194,12 +195,7 @@ def build_prompt(request: QueryRequest) -> str:
 - Gunakan HAVING untuk filter hasil aggregate (COUNT, SUM, AVG), bukan WHERE
 - Hanya gunakan nama kolom yang ADA di schema"""
 
-    contoh = """### Contoh:
-Pertanyaan: siapa saja yang bekerja di departemen Engineering?
-SQL: SELECT e.name FROM employees e JOIN departments d ON e.department_id = d.id WHERE d.name = 'Engineering'
-
-Pertanyaan: siapa yang mengerjakan lebih dari 1 proyek?
-SQL: SELECT e.name, COUNT(ep.project_id) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id GROUP BY e.id HAVING COUNT(ep.project_id) > 1"""
+    contoh = "### " + _get_domain_examples(request.domain)
 
     # --- Mode Groq / Zero-Shot pakai format chat ---
     if model_mode in ("groq", "zero-shot"):
@@ -370,6 +366,24 @@ async def generate_sql(request: QueryRequest):
         raise HTTPException(status_code=500, detail=f"Gagal memproses request: {str(e)}")
 
 
+def _get_domain_examples(domain: str) -> str:
+    """Mengembalikan contoh pertanyaan-SQL yang sesuai dengan domain."""
+    if domain == "smartcity":
+        return """Contoh:
+Pertanyaan: berapa total pelanggaran per jenis di setiap kota?
+SQL: SELECT d.name, v.violation_type, COUNT(*) as total FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id JOIN roads r ON cl.road_id = r.id JOIN districts d ON r.district_id = d.id GROUP BY d.name, v.violation_type ORDER BY d.name, total DESC
+
+Pertanyaan: kamera mana yang paling banyak mendeteksi pelanggaran?
+SQL: SELECT cl.location_desc, cl.camera_type, COUNT(*) as total_violations FROM violations v JOIN camera_locations cl ON v.camera_id = cl.id GROUP BY cl.id ORDER BY total_violations DESC LIMIT 5"""
+    else:
+        return """Contoh:
+Pertanyaan: siapa saja yang bekerja di departemen Engineering?
+SQL: SELECT e.name FROM employees e JOIN departments d ON e.department_id = d.id WHERE d.name = 'Engineering'
+
+Pertanyaan: siapa yang mengerjakan lebih dari 1 proyek?
+SQL: SELECT e.name, COUNT(ep.project_id) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id GROUP BY e.id HAVING COUNT(ep.project_id) > 1"""
+
+
 def _build_groq_messages(request: QueryRequest) -> list:
     """Membangun messages array untuk Groq API."""
     rules = """Rules:
@@ -379,12 +393,7 @@ def _build_groq_messages(request: QueryRequest) -> list:
 - Gunakan HAVING untuk filter hasil aggregate (COUNT, SUM, AVG), bukan WHERE
 - Hanya gunakan nama kolom yang ADA di schema"""
 
-    contoh = """Contoh:
-Pertanyaan: siapa saja yang bekerja di departemen Engineering?
-SQL: SELECT e.name FROM employees e JOIN departments d ON e.department_id = d.id WHERE d.name = 'Engineering'
-
-Pertanyaan: siapa yang mengerjakan lebih dari 1 proyek?
-SQL: SELECT e.name, COUNT(ep.project_id) FROM employees e JOIN employee_projects ep ON e.id = ep.employee_id GROUP BY e.id HAVING COUNT(ep.project_id) > 1"""
+    contoh = _get_domain_examples(request.domain)
 
     system_msg = "Kamu adalah asisten database SQL. HANYA outputkan query SQL, tanpa markdown, tanpa penjelasan apapun. Output harus berupa SQL query yang valid."
 
@@ -427,6 +436,7 @@ Berikan HANYA query SQL."""
 class ExplainRequest(BaseModel):
     sql: str
     question: str = ""
+    domain: str = "hris"
 
 class ExplainResponse(BaseModel):
     explanation: str
