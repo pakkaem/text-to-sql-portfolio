@@ -5,6 +5,8 @@
 <script>
   // @ts-nocheck
   import { onMount } from "svelte";
+  import ChartComponent from "$lib/Chart.svelte";
+  import { selectCharts } from "$lib/charts.js";
 
   let question = $state("");
   let loading = $state(false);
@@ -15,6 +17,35 @@
   let sqlExplanation = $state("");
   let explanationLoading = $state(false);
   let responseTime = $state("");
+  let autoCharts = $state([]);
+  let showCharts = $state(true);
+
+  // --- Domain ---
+  let domains = $state([]);
+  let currentDomain = $state("hris");
+
+  async function loadDomains() {
+    try {
+      const resp = await fetch("http://localhost:8080/domains");
+      const data = await resp.json();
+      domains = data.domains || [];
+      if (domains.length > 0 && !domains.find(d => d.name === currentDomain)) {
+        currentDomain = domains[0].name;
+      }
+    } catch { domains = []; }
+  }
+
+  function switchDomain(domainName) {
+    currentDomain = domainName;
+    generatedSQL = "";
+    displayedSQL = "";
+    resultData = [];
+    sqlExplanation = "";
+    errorMsg = "";
+    autoCharts = [];
+    loadSchema();
+    loadHistory();
+  }
 
   // --- Dark Mode ---
   let darkMode = $state(false);
@@ -22,7 +53,7 @@
   function toggleDarkMode() {
     darkMode = !darkMode;
     document.documentElement.setAttribute("data-theme", darkMode ? "dark" : "light");
-    localStorage.setItem("hris-dark-mode", darkMode ? "1" : "0");
+    localStorage.setItem("tsql-dark-mode", darkMode ? "1" : "0");
   }
 
   // --- Health Status ---
@@ -45,7 +76,7 @@
 
   async function loadSchema() {
     try {
-      const resp = await fetch("http://localhost:8080/schema");
+      const resp = await fetch(`http://localhost:8080/schema?domain=${currentDomain}`);
       const data = await resp.json();
       schemaData = data.tables || [];
     } catch { schemaData = []; }
@@ -55,31 +86,48 @@
     expandedTable = expandedTable === tableName ? null : tableName;
   }
 
-  // --- Suggested Questions ---
-  const suggestedQuestions = [
-    "How many employees are in each department?",
-    "Who earns the highest salary?",
-    "List all ongoing projects",
-    "Show attendance records for this month",
-    "Which employees are in multiple projects?",
-    "What is the total payroll by department?"
-  ];
+  // --- Suggested Questions (per domain) ---
+  const domainQuestions = {
+    hris: [
+      "How many employees are in each department?",
+      "Who earns the highest salary?",
+      "List all ongoing projects",
+      "Show attendance records for this month",
+      "Which employees are in multiple projects?",
+      "What is the total payroll by department?"
+    ],
+    smartcity: [
+      "How many traffic violations happened in each district?",
+      "Which camera detects the most violations?",
+      "List all ongoing infrastructure projects",
+      "Show air quality readings by zone",
+      "Which districts have the most road segments?",
+      "What is the average response time for incidents?"
+    ]
+  };
 
-  // --- Query History (localStorage) ---
+  let suggestedQuestions = $derived(domainQuestions[currentDomain] || domainQuestions.hris);
+
+  // --- Query History (localStorage per domain) ---
   let history = $state([]);
   let showHistory = $state(false);
 
+  function getHistoryKey() {
+    return `tsql-query-history-${currentDomain}`;
+  }
+
   function loadHistory() {
     try {
-      const saved = localStorage.getItem("hris-query-history");
+      const saved = localStorage.getItem(getHistoryKey());
       if (saved) history = JSON.parse(saved);
+      else history = [];
     } catch { history = []; }
   }
 
   function saveToHistory(q, sql, count) {
     const entry = { question: q, sql, rowCount: count, time: new Date().toLocaleString("id-ID") };
     history = [entry, ...history.filter(h => h.question !== q)].slice(0, 20);
-    localStorage.setItem("hris-query-history", JSON.stringify(history));
+    localStorage.setItem(getHistoryKey(), JSON.stringify(history));
   }
 
   function loadFromHistory(entry) {
@@ -90,7 +138,7 @@
 
   function clearHistory() {
     history = [];
-    localStorage.removeItem("hris-query-history");
+    localStorage.removeItem(getHistoryKey());
   }
 
   // --- Export to CSV ---
@@ -109,7 +157,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `hris-query-${Date.now()}.csv`;
+    a.download = `${currentDomain}-query-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -161,7 +209,7 @@
       const response = await fetch("http://localhost:8080/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question, domain: currentDomain })
       });
 
       const data = await response.json();
@@ -180,6 +228,13 @@
       // Save to history
       saveToHistory(question, generatedSQL, resultData.length);
 
+      // Auto-generate charts from results
+      if (resultData.length > 0) {
+        autoCharts = selectCharts(displayColumns, resultData, question);
+      } else {
+        autoCharts = [];
+      }
+
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : String(err);
     } finally {
@@ -197,7 +252,7 @@
       const response = await fetch("http://localhost:8080/explain", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sql: generatedSQL, question: question })
+        body: JSON.stringify({ sql: generatedSQL, question: question, domain: currentDomain })
       });
 
       const data = await response.json();
@@ -211,12 +266,13 @@
   }
 
   // Init
-  onMount(() => {
-    const savedTheme = localStorage.getItem("hris-dark-mode");
+  onMount(async () => {
+    const savedTheme = localStorage.getItem("tsql-dark-mode");
     if (savedTheme === "1") {
       darkMode = true;
       document.documentElement.setAttribute("data-theme", "dark");
     }
+    await loadDomains();
     loadHistory();
     checkHealth();
     loadSchema();
@@ -272,8 +328,8 @@
           </button>
         </div>
         <div class="header-center">
-          <h1>🧠 HRIS Data Assistant</h1>
-          <p>Tanya AI menggunakan bahasa Inggris untuk melihat data HRIS (Departemen, Karyawan, Gaji, Absensi).</p>
+          <h1>🧠 Multi-Domain Data Assistant</h1>
+          <p>Tanya AI menggunakan bahasa natural — pilih domain database di bawah untuk mulai.</p>
         </div>
         <div class="header-right">
           <!-- Health Status -->
@@ -287,6 +343,24 @@
           </button>
         </div>
       </div>
+
+      <!-- Domain Selector -->
+      {#if domains.length > 0}
+        <div class="domain-selector">
+          {#each domains as d}
+            <button
+              class="domain-tab"
+              class:active-domain={currentDomain === d.name}
+              onclick={() => switchDomain(d.name)}
+              title={d.description}
+            >
+              <span class="domain-icon">{d.display_name?.split(' ')[0] || '📊'}</span>
+              <span class="domain-label">{d.display_name?.split(' ').slice(1).join(' ') || d.name}</span>
+              <span class="domain-count">{d.table_count} tables</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
     </header>
 
     <!-- Suggested Questions -->
@@ -306,7 +380,7 @@
         type="text" 
         bind:value={question} 
         onkeydown={(e) => e.key === 'Enter' && askDatabase()}
-        placeholder="Contoh: Show me all employees in Sales department..."
+        placeholder={currentDomain === 'smartcity' ? "Contoh: Show me traffic violations in Central district..." : "Contoh: Show me all employees in Sales department..."}
         disabled={loading}
       />
       <button onclick={askDatabase} disabled={loading}>
@@ -342,6 +416,32 @@
 
     {#if errorMsg}
       <div class="error">❌ {errorMsg}</div>
+    {/if}
+
+    {#if autoCharts.length > 0}
+      <!-- Auto-generated Charts -->
+      <section class="charts-section">
+        <div class="charts-header">
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            Visualization
+          </h3>
+          <button class="btn-ghost btn-sm" onclick={() => showCharts = !showCharts}>
+            {showCharts ? 'Hide Charts' : 'Show Charts'}
+          </button>
+        </div>
+        {#if showCharts}
+          <div class="charts-grid">
+            {#each autoCharts as chartConfig (chartConfig.type + ':' + chartConfig.title)}
+              <ChartComponent
+                type={chartConfig.type}
+                config={chartConfig.config}
+                title={chartConfig.title}
+              />
+            {/each}
+          </div>
+        {/if}
+      </section>
     {/if}
 
     {#if generatedSQL}
@@ -622,6 +722,55 @@
     margin: 4px 0 0 0;
   }
 
+  /* Domain Selector */
+  .domain-selector {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .domain-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-card, white);
+    border: 2px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: auto;
+    font-family: inherit;
+  }
+  .domain-tab:hover:not(.active-domain) {
+    border-color: #93c5fd;
+    background: var(--hover-bg, #f1f5f9);
+  }
+  .active-domain {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  :global([data-theme="dark"]) .active-domain {
+    background: #1e3a5f;
+  }
+  .domain-icon {
+    font-size: 20px;
+  }
+  .domain-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #0f172a);
+  }
+  .domain-count {
+    font-size: 11px;
+    color: var(--text-muted, #94a3b8);
+    background: var(--tag-bg, #f1f5f9);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
   /* Health Dots */
   .health-dots {
     display: flex;
@@ -878,16 +1027,26 @@
     padding: 16px;
     margin-bottom: 16px;
   }
+  :global([data-theme="dark"]) .explanation-box {
+    background: #1e3a5f;
+    border-color: #2563eb;
+  }
   .explanation-box h4 {
     margin: 0 0 8px 0;
     font-size: 14px;
     color: #1e40af;
+  }
+  :global([data-theme="dark"]) .explanation-box h4 {
+    color: #93c5fd;
   }
   .explanation-box p {
     margin: 0;
     font-size: 14px;
     color: #1e3a5f;
     line-height: 1.6;
+  }
+  :global([data-theme="dark"]) .explanation-box p {
+    color: #bfdbfe;
   }
 
   /* Table */
@@ -995,13 +1154,45 @@
     100% { background-position: -200% 0; }
   }
 
+  /* Charts Section */
+  .charts-section {
+    background-color: var(--bg-card, white);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    margin-bottom: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+  .charts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .charts-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+  }
+  .charts-header h3 svg {
+    color: var(--text-muted, #64748b);
+  }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 12px;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .sidebar-open {
       position: fixed;
       z-index: 100;
       width: 280px;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.3);
     }
     .sidebar-overlay {
       display: block;
@@ -1011,24 +1202,32 @@
       z-index: 99;
     }
     .header-top {
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
     }
     .header-left, .header-right {
-      padding-top: 0;
+      order: 2;
+    }
+    .domain-selector {
+      gap: 8px;
+    }
+    .domain-tab {
+      padding: 8px 14px;
     }
     .search-box {
       flex-direction: column;
     }
     button {
-      min-width: 100%;
-    }
-    .action-bar {
-      flex-direction: column;
-    }
-    .btn-secondary {
+      min-width: auto;
       width: 100%;
-      text-align: center;
+    }
+    .suggestion-chips {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding-bottom: 8px;
+    }
+    .chip {
+      white-space: nowrap;
     }
   }
 </style>

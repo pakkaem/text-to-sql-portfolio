@@ -5,15 +5,32 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function load() {
-	// Read results.json from the benchmark directory (4 levels up from src/routes/benchmark/ to project root)
-	const resultsPath = resolve(__dirname, '..', '..', '..', '..', 'benchmark', 'results.json');
-	let report = {};
+	const benchmarkDir = resolve(__dirname, '..', '..', '..', '..', 'benchmark');
+
+	// Load HRIS results
+	const hrisPath = resolve(benchmarkDir, 'results.json');
+	let hrisReport = {};
 	try {
-		const raw = readFileSync(resultsPath, 'utf-8');
-		report = JSON.parse(raw);
+		const raw = readFileSync(hrisPath, 'utf-8');
+		hrisReport = JSON.parse(raw);
 	} catch (/** @type {any} */ e) {
-		report = { error: `Failed to load results.json: ${e?.message ?? String(e)}` };
+		hrisReport = { error: `Failed to load results.json: ${e?.message ?? String(e)}` };
 	}
 
-	return { report };
+	// Load Smart City results
+	const smartcityPath = resolve(benchmarkDir, 'results-smartcity.json');
+	let smartcityReport = {};
+	try {
+		const raw = readFileSync(smartcityPath, 'utf-8');
+		smartcityReport = JSON.parse(raw);
+	} catch (/** @type {any} */ e) {
+		smartcityReport = { error: `Failed to load results-smartcity.json: ${e?.message ?? String(e)}` };
+	}
+
+	return {
+		reports: {
+			hris: hrisReport,
+			smartcity: smartcityReport,
+		}
+	};
 }

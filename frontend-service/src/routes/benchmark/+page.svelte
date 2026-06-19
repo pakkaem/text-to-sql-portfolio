@@ -8,7 +8,22 @@
   import { onMount } from "svelte";
 
   let { data } = $props();
-  let report = $derived(data.report);
+
+  // Domain selection
+  const domainConfig = {
+    hris: { label: "HRIS", icon: "👥", color: "#3b82f6" },
+    smartcity: { label: "Smart City", icon: "🏙️", color: "#8b5cf6" },
+  };
+  let activeDomain = $state("hris");
+  let report = $derived(data.reports?.[activeDomain] ?? {});
+
+  function switchDomain(domain) {
+    activeDomain = domain;
+    // Destroy existing charts and rebuild
+    destroyCharts();
+    // Need a tick to let the DOM update before rebuilding
+    setTimeout(() => buildCharts(), 50);
+  }
 
   // Chart instances (for cleanup)
   let accuracyChart, categoryChart, difficultyChart, timeChart, matchBreakdownChart;
@@ -81,6 +96,12 @@
     join: "JOIN",
     complex: "Complex",
     advanced: "Advanced",
+    spatial_query: "Spatial Query",
+    json_query: "JSON Query",
+    window_function: "Window Function",
+    subquery: "Subquery",
+    cte: "CTE",
+    set_operation: "Set Operation",
   };
 
   const chartColors = {
@@ -95,15 +116,15 @@
 
   const palette6 = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
-  onMount(() => {
-    // Restore dark mode
-    const saved = localStorage.getItem("hris-dark-mode");
-    if (saved === "1") {
-      darkMode = true;
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
+  function destroyCharts() {
+    [accuracyChart, categoryChart, difficultyChart, timeChart, matchBreakdownChart].forEach(c => {
+      if (c) c.destroy();
+    });
+    accuracyChart = categoryChart = difficultyChart = timeChart = matchBreakdownChart = null;
+  }
 
-    if (!report?.results) return;
+  function buildCharts() {
+    if (!report?.results || typeof Chart === "undefined") return;
 
     const textColor = "#94a3b8";
     const gridColor = "rgba(148,163,184,0.1)";
@@ -111,32 +132,37 @@
     Chart.defaults.color = defaults.color;
     Chart.defaults.font.family = defaults.font.family;
 
+    const activeColor = domainConfig[activeDomain]?.color ?? "#3b82f6";
+
     // 1. Overall Accuracy Donut
     const summary = report.summary;
     const passed = summary.result_accuracy_pct;
     const failed = 100 - passed;
-    accuracyChart = new Chart(document.getElementById("accuracyChart"), {
-      type: "doughnut",
-      data: {
-        labels: ["Passed", "Failed"],
-        datasets: [{
-          data: [passed, failed],
-          backgroundColor: [chartColors.exact, chartColors.error],
-          borderWidth: 0,
-          cutout: "72%",
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed.toFixed(1)}%` }
+    const accCanvas = document.getElementById("accuracyChart");
+    if (accCanvas) {
+      accuracyChart = new Chart(accCanvas, {
+        type: "doughnut",
+        data: {
+          labels: ["Passed", "Failed"],
+          datasets: [{
+            data: [passed, failed],
+            backgroundColor: [chartColors.exact, chartColors.error],
+            borderWidth: 0,
+            cutout: "72%",
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed.toFixed(1)}%` }
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     // 2. Accuracy by Category (horizontal bar)
     const catKeys = Object.keys(report.stats_by_category);
@@ -145,44 +171,47 @@
       const s = report.stats_by_category[k];
       return s.total > 0 ? (s.matched / s.total * 100) : 0;
     });
-    categoryChart = new Chart(document.getElementById("categoryChart"), {
-      type: "bar",
-      data: {
-        labels: catLabels,
-        datasets: [{
-          label: "Match %",
-          data: catMatchPct,
-          backgroundColor: palette6,
-          borderRadius: 6,
-          barThickness: 24,
-        }],
-      },
-      options: {
-        indexAxis: "y",
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            max: 100,
-            ticks: { callback: (v) => v + "%" },
-            grid: { color: gridColor },
-          },
-          y: { grid: { display: false } },
+    const catCanvas = document.getElementById("categoryChart");
+    if (catCanvas) {
+      categoryChart = new Chart(catCanvas, {
+        type: "bar",
+        data: {
+          labels: catLabels,
+          datasets: [{
+            label: "Match %",
+            data: catMatchPct,
+            backgroundColor: palette6,
+            borderRadius: 6,
+            barThickness: 24,
+          }],
         },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const k = catKeys[ctx.dataIndex];
-                const s = report.stats_by_category[k];
-                return `${s.matched}/${s.total} matched (${ctx.parsed.x.toFixed(1)}%)`;
+        options: {
+          indexAxis: "y",
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              max: 100,
+              ticks: { callback: (v) => v + "%" },
+              grid: { color: gridColor },
+            },
+            y: { grid: { display: false } },
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const k = catKeys[ctx.dataIndex];
+                  const s = report.stats_by_category[k];
+                  return `${s.matched}/${s.total} matched (${ctx.parsed.x.toFixed(1)}%)`;
+                }
               }
-            }
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     // 3. Accuracy by Difficulty (grouped bar: executed vs matched)
     const diffKeys = ["easy", "medium", "hard"];
@@ -195,85 +224,91 @@
       const s = report.stats_by_difficulty[k];
       return s ? (s.matched / s.total * 100) : 0;
     });
-    difficultyChart = new Chart(document.getElementById("difficultyChart"), {
-      type: "bar",
-      data: {
-        labels: diffLabels,
-        datasets: [
-          {
-            label: "Executed %",
-            data: diffExec,
-            backgroundColor: "rgba(59,130,246,0.3)",
-            borderColor: chartColors.blue,
-            borderWidth: 1,
-            borderRadius: 4,
-          },
-          {
-            label: "Match %",
-            data: diffMatch,
-            backgroundColor: "rgba(16,185,129,0.3)",
-            borderColor: chartColors.exact,
-            borderWidth: 1,
-            borderRadius: 4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            max: 100,
-            ticks: { callback: (v) => v + "%" },
-            grid: { color: gridColor },
-          },
-          x: { grid: { display: false } },
+    const diffCanvas = document.getElementById("difficultyChart");
+    if (diffCanvas) {
+      difficultyChart = new Chart(diffCanvas, {
+        type: "bar",
+        data: {
+          labels: diffLabels,
+          datasets: [
+            {
+              label: "Executed %",
+              data: diffExec,
+              backgroundColor: "rgba(59,130,246,0.3)",
+              borderColor: chartColors.blue,
+              borderWidth: 1,
+              borderRadius: 4,
+            },
+            {
+              label: "Match %",
+              data: diffMatch,
+              backgroundColor: "rgba(16,185,129,0.3)",
+              borderColor: chartColors.exact,
+              borderWidth: 1,
+              borderRadius: 4,
+            },
+          ],
         },
-        plugins: {
-          tooltip: {
-            callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              max: 100,
+              ticks: { callback: (v) => v + "%" },
+              grid: { color: gridColor },
+            },
+            x: { grid: { display: false } },
+          },
+          plugins: {
+            tooltip: {
+              callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` }
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     // 4. Response Time Distribution (bar chart per question)
     const qIds = report.results.map(r => `Q${String(r.id).padStart(2, "0")}`);
     const times = report.results.map(r => r.response_ms);
     const timeColors = times.map(t => t < 1000 ? chartColors.exact : t < 2000 ? chartColors.partial : chartColors.error);
-    timeChart = new Chart(document.getElementById("timeChart"), {
-      type: "bar",
-      data: {
-        labels: qIds,
-        datasets: [{
-          label: "Response Time (ms)",
-          data: times,
-          backgroundColor: timeColors,
-          borderRadius: 3,
-          barThickness: 12,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            ticks: { callback: (v) => v + "ms" },
-            grid: { color: gridColor },
+    const timeCanvas = document.getElementById("timeChart");
+    if (timeCanvas) {
+      timeChart = new Chart(timeCanvas, {
+        type: "bar",
+        data: {
+          labels: qIds,
+          datasets: [{
+            label: "Response Time (ms)",
+            data: times,
+            backgroundColor: timeColors,
+            borderRadius: 3,
+            barThickness: Math.max(8, Math.min(16, 600 / times.length)),
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              ticks: { callback: (v) => v + "ms" },
+              grid: { color: gridColor },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { maxRotation: 45, font: { size: 10 } },
+            },
           },
-          x: {
-            grid: { display: false },
-            ticks: { maxRotation: 45, font: { size: 10 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: { label: (ctx) => `${ctx.parsed.y}ms` }
+            },
           },
         },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: { label: (ctx) => `${ctx.parsed.y}ms` }
-          },
-        },
-      },
-    });
+      });
+    }
 
     // 5. Match Breakdown by Category (stacked bar)
     const matchTypes = ["exact_match", "partial_match", "mismatch"];
@@ -287,24 +322,45 @@
       backgroundColor: matchColorMap[idx],
       borderRadius: 2,
     }));
-    matchBreakdownChart = new Chart(document.getElementById("matchBreakdownChart"), {
-      type: "bar",
-      data: {
-        labels: catLabels,
-        datasets: matchDatasets,
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { stepSize: 1 }, grid: { color: gridColor } },
+    const matchCanvas = document.getElementById("matchBreakdownChart");
+    if (matchCanvas) {
+      matchBreakdownChart = new Chart(matchCanvas, {
+        type: "bar",
+        data: {
+          labels: catLabels,
+          datasets: matchDatasets,
         },
-        plugins: {
-          tooltip: { mode: "index" },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, ticks: { stepSize: 1 }, grid: { color: gridColor } },
+          },
+          plugins: {
+            tooltip: { mode: "index" },
+          },
         },
-      },
-    });
+      });
+    }
+  }
+
+  onMount(() => {
+    // Restore dark mode
+    const saved = localStorage.getItem("hris-dark-mode");
+    if (saved === "1") {
+      darkMode = true;
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+
+    // Default to the domain that has data
+    if (!data.reports?.hris?.results && data.reports?.smartcity?.results) {
+      activeDomain = "smartcity";
+    }
+
+    buildCharts();
+
+    return () => destroyCharts();
   });
 </script>
 
@@ -323,6 +379,30 @@
         <a href="/" class="btn-link">← Back to App</a>
       </div>
     </div>
+
+    <!-- Domain Tabs -->
+    <div class="domain-tabs">
+      {#each Object.entries(domainConfig) as [key, cfg]}
+        {@const hasData = !!data.reports?.[key]?.results}
+        <button
+          class="domain-tab"
+          class:active={activeDomain === key}
+          class:has-data={hasData}
+          style={activeDomain === key ? `--tab-color: ${cfg.color}` : ""}
+          onclick={() => switchDomain(key)}
+          disabled={!hasData}
+        >
+          <span class="tab-icon">{cfg.icon}</span>
+          <span class="tab-label">{cfg.label}</span>
+          {#if hasData}
+            <span class="tab-badge" style="background: {cfg.color}">{data.reports[key].metadata.total_questions}Q</span>
+          {:else}
+            <span class="tab-badge tab-badge-empty">No Data</span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
     {#if report?.metadata}
       <div class="meta-bar">
         <span>📅 {new Date(report.metadata.run_date).toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
@@ -551,6 +631,56 @@
     gap: 16px;
     font-size: 13px;
     color: var(--text-muted);
+    margin-top: 12px;
+  }
+
+  /* Domain Tabs */
+  .domain-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .domain-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .domain-tab:hover:not(:disabled) {
+    border-color: var(--tab-color, #3b82f6);
+    background: var(--hover-bg);
+  }
+  .domain-tab.active {
+    border-color: var(--tab-color, #3b82f6);
+    background: color-mix(in srgb, var(--tab-color, #3b82f6) 8%, var(--bg-card));
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--tab-color, #3b82f6) 20%, transparent);
+  }
+  .domain-tab:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .tab-icon { font-size: 18px; }
+  .tab-label { font-weight: 600; }
+  .tab-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+  }
+  .tab-badge-empty {
+    background: #64748b !important;
+    font-size: 10px;
   }
 
   /* KPI Cards */
@@ -686,5 +816,7 @@
     .charts-row { grid-template-columns: 1fr; }
     .header-top { flex-direction: column; gap: 8px; }
     .sql-compare { grid-template-columns: 1fr; }
+    .domain-tabs { flex-direction: column; }
+    .domain-tab { justify-content: center; }
   }
 </style>
