@@ -1,6 +1,10 @@
-# 🧠 Text-to-SQL AI Assistant (HRIS Domain)
+# 🧠 Text-to-SQL AI Assistant (Multi-Domain)
 
-Proyek ini adalah implementasi *End-to-End* dari arsitektur AI Text-to-SQL. Sistem ini memungkinkan pengguna untuk mengekstrak data dari database relasional (HRIS) menggunakan pertanyaan bahasa natural (Bahasa Inggris).
+Proyek ini adalah implementasi *End-to-End* dari arsitektur AI Text-to-SQL yang mendukung **multi-domain database**. Sistem ini memungkinkan pengguna untuk mengekstrak data dari database relasional menggunakan pertanyaan bahasa natural (Bahasa Inggris).
+
+**Dua domain tersedia:**
+- **HRIS** — Human Resource Information System (karyawan, departemen, payroll, dll.)
+- **Smart City** — Sistem monitoring kota pintar (kamera CCTV, lalu lintas, pelanggaran, insiden, dll.)
 
 Sistem ini menunjukkan pemisahan beban kerja (*separation of concerns*) antara layanan Inferensi AI dan layanan Backend utama.
 
@@ -12,30 +16,33 @@ Proyek ini mengadopsi arsitektur *microservices* sederhana:
 
 | Layer | Teknologi | Deskripsi |
 |-------|-----------|-----------|
-| **Layanan AI** | Python / FastAPI | Bertindak sebagai "otak" sistem. Mendukung **3 mode inference**: **Groq API** (default, cloud), **Zero-Shot** (model lokal), dan **LoRA Fine-tuned** (model lokal + adapter). Mode dipilih via environment variable tanpa ubah kode. |
-| **Layanan Backend** | Golang / Gin | Bertindak sebagai "jembatan" utama. Menerima request HTTP dari pengguna, membaca **DDL schema secara dinamis** dari sqlite_master, meminta query SQL dari layanan AI, melakukan validasi keamanan, dan mengeksekusi query ke database. Dilengkapi **retry logic** otomatis jika query gagal. |
-| **Frontend** | SvelteKit 2 / Svelte 5 | UI interaktif dengan fitur **Dark Mode**, **Schema Explorer**, **Query History**, **Pagination**, **Export CSV**, dan **SQL Explanation**. |
-| **Database** | SQLite | Penyimpanan data terintegrasi (No-Ops) yang dibuat otomatis beserta *dummy data* saat aplikasi pertama kali dijalankan. |
+| **Layanan AI** | Python / FastAPI | Bertindak sebagai "otak" sistem. Mendukung **3 mode inference**: **Groq API** (default, cloud), **Zero-Shot** (model lokal), dan **LoRA Fine-tuned** (model lokal + adapter). Menerima context DDL yang berbeda per domain. |
+| **Layanan Backend** | Golang / Gin | Bertindak sebagai "jembatan" utama. Mengelola **multi-database** (HRIS + Smart City), membaca DDL schema secara dinamis, meminta query SQL dari layanan AI, melakukan validasi keamanan, dan mengeksekusi query. Dilengkapi **retry logic** otomatis. |
+| **Frontend** | SvelteKit 2 / Svelte 5 | UI interaktif dengan **Domain Selector**, fitur **Dark Mode**, **Schema Explorer**, **Query History**, **Pagination**, **Export CSV**, dan **SQL Explanation**. |
+| **Database** | SQLite (multi-file) | Dua file database terpisah: `hris.db` dan `smartcity.db`, dibuat otomatis beserta *dummy data* saat pertama kali dijalankan. |
 
 ### Alur Data
 
 ```
 User → Frontend (SvelteKit :5173) → Backend (Go/Gin :8080) → AI Service (FastAPI :8000)
-                                                                      │
-                                                      ┌───────────────┼───────────────┐
-                                                      ▼               ▼               ▼
-                                                  Groq API      Zero-Shot         LoRA
-                                                  (cloud)       (lokal)         (lokal)
-                                                      │               │               │
-                                                      └───────────────┼───────────────┘
-                                                                      ▼
-                                                                SQL Query
-                                                                      │
-                                                                      ▼
-                                                            Backend executes → SQLite
-                                                                      │
-                                                                      ▼
-                                                            Response → User (tabel)
+                    │                           │                        │
+              domain selector             domain routing           domain-aware
+              (HRIS/Smart City)          (per-db connection)       prompt + DDL
+                                                                       │
+                                                       ┌───────────────┼───────────────┐
+                                                       ▼               ▼               ▼
+                                                   Groq API      Zero-Shot         LoRA
+                                                   (cloud)       (lokal)         (lokal)
+                                                       │               │               │
+                                                       └───────────────┼───────────────┘
+                                                                       ▼
+                                                                 SQL Query
+                                                                       │
+                                                                       ▼
+                                                         Backend executes → SQLite (domain-specific)
+                                                                       │
+                                                                       ▼
+                                                             Response → User (tabel)
 ```
 
 ---
@@ -46,6 +53,8 @@ User → Frontend (SvelteKit :5173) → Backend (Go/Gin :8080) → AI Service (F
 | Fitur | Deskripsi |
 |-------|-----------|
 | **Text-to-SQL** | Konversi pertanyaan bahasa natural ke SQL menggunakan AI |
+| **Multi-Domain** | Dukungan HRIS dan Smart City dengan database, schema, dan prompt terpisah |
+| **Domain Selector** | Dropdown di frontend untuk memilih domain (HRIS / Smart City) |
 | **SQL Execution & Display** | Eksekusi query otomatis dan tampilkan hasil dalam tabel |
 | **Error Handling & Retry** | Retry otomatis jika SQL pertama gagal, dengan error feedback ke AI |
 | **SQL Validation** | Hanya SELECT/WITH yang diizinkan (read-only) |
@@ -56,7 +65,7 @@ User → Frontend (SvelteKit :5173) → Backend (Go/Gin :8080) → AI Service (F
 | Fitur | Lokasi | Deskripsi |
 |-------|--------|-----------|
 | **⚡ Response Time** | Frontend + Backend | Badge waktu eksekusi query (ms) ditampilkan di SQL box dan footer tabel |
-| **🗄️ Schema Explorer** | Frontend + Backend | Sidebar interaktif yang menampilkan semua tabel, kolom, tipe data, dan primary key dari database secara real-time (via `GET /schema`) |
+| **🗄️ Schema Explorer** | Frontend + Backend | Sidebar interaktif yang menampilkan semua tabel, kolom, tipe data, dan primary key secara real-time (via `GET /schema?domain=...`) |
 | **📄 Pagination** | Frontend | Tabel dibagi per 20 baris dengan navigasi halaman (Prev/Next + nomor halaman) |
 | **🌙 Dark Mode** | Frontend | Toggle dark/light mode di header, menggunakan CSS custom properties, preferensi disimpan di localStorage |
 | **🩺 Health Status** | Frontend + Backend | 2 indikator dot hijau/merah di header menampilkan status koneksi Backend DB dan AI Service (via `GET /health`) |
@@ -64,7 +73,7 @@ User → Frontend (SvelteKit :5173) → Backend (Go/Gin :8080) → AI Service (F
 ### Fitur Tambahan
 | Fitur | Lokasi | Deskripsi |
 |-------|--------|-----------|
-| **💡 Suggested Questions** | Frontend | 6 contoh pertanyaan dalam bentuk chip yang bisa diklik langsung |
+| **💡 Suggested Questions** | Frontend | Contoh pertanyaan per domain dalam bentuk chip yang bisa diklik langsung |
 | **📜 Query History** | Frontend | Riwayat 20 query terakhir disimpan di localStorage, bisa di-load ulang atau dihapus |
 | **📥 Export CSV** | Frontend | Download hasil query dalam format CSV |
 | **📖 SQL Explanation** | Frontend + Backend | Penjelasan natural language dari SQL yang di-generate oleh AI (via `POST /explain`) |
@@ -133,7 +142,7 @@ cd backend-service
 go run .
 ```
 
-> Backend akan secara otomatis membuat file `hris.db` dan mengisinya dengan data HRIS dummy. Schema database dibaca **secara dinamis** dari `sqlite_master`.
+> Backend akan secara otomatis membuat file `hris.db` dan `smartcity.db` serta mengisinya dengan data dummy. Schema database dibaca **secara dinamis** dari `sqlite_master`.
 
 ### 3. Menjalankan Frontend (Port 5173)
 
@@ -147,14 +156,25 @@ npm run dev
 
 ## 🌐 API Endpoints
 
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| `POST` | `/ask` | **Endpoint utama.** Kirim pertanyaan, dapatkan SQL + hasil query + response time |
-| `GET` | `/health` | Health check — status koneksi DB dan AI Service |
-| `GET` | `/schema` | Struktur database — daftar tabel, kolom, tipe data, primary key |
-| `POST` | `/explain` | Penjelasan natural language dari SQL query |
+| Method | Endpoint | Parameter | Deskripsi |
+|--------|----------|-----------|-----------|
+| `POST` | `/ask` | `question`, `domain` | **Endpoint utama.** Kirim pertanyaan + domain, dapatkan SQL + hasil query + response time |
+| `GET` | `/health` | — | Health check — status koneksi DB dan AI Service |
+| `GET` | `/schema` | `domain` | Struktur database per domain — daftar tabel, kolom, tipe data, primary key |
+| `POST` | `/explain` | `question`, `sql`, `domain` | Penjelasan natural language dari SQL query |
+| `POST` | `/benchmark/execute` | `sql`, `domain` | Eksekusi raw SQL (khusus benchmark) |
 
-### Contoh Response `/ask`
+### Contoh Request `/ask`
+
+```json
+POST /ask
+{
+  "question": "How many employees are in the Engineering department?",
+  "domain": "hris"
+}
+```
+
+### Contoh Response
 
 ```json
 {
@@ -181,12 +201,13 @@ npm run dev
 | `LORA_BASE_MODEL` | `TinyLlama/TinyLlama-1.1B-Chat-v1.0` | Base model (mode lora) |
 | `LORA_ADAPTER_PATH` | `./checkpoint-1950` | Path ke LoRA adapter (mode lora) |
 
-### Backend Service
+### Backend Service (`backend-service/.env`)
 
 | Variabel | Default | Keterangan |
 |----------|---------|------------|
 | `AI_SERVICE_URL` | `http://127.0.0.1:8000` | URL AI service |
-| `DB_PATH` | `./hris.db` | Path ke file SQLite |
+| `HRIS_DB_PATH` | `./hris.db` | Path ke file SQLite HRIS |
+| `SMARTCITY_DB_PATH` | `./smartcity.db` | Path ke file SQLite Smart City |
 | `BACKEND_PORT` | `8080` | Port backend service |
 | `CORS_ORIGINS` | `*` | Allowed CORS origins (comma-separated) |
 
@@ -196,8 +217,8 @@ npm run dev
 
 | Fitur | Lokasi | Fungsi |
 |-------|--------|--------|
-| **Dynamic Schema** | `main.go` | Membaca DDL aktual dari `sqlite_master` — otomatis akurat walau struktur tabel berubah |
-| **Prompt Engineering** | `app.py` | Rules ketat (SELECT only, JOIN yang benar) + few-shot examples untuk konsistensi output AI |
+| **Dynamic Schema** | `main.go` | Membaca DDL aktual dari `sqlite_master` per database — otomatis akurat walau struktur tabel berubah |
+| **Domain-Aware Prompt** | `app.py` | Prompt engineering yang berbeda per domain (HRIS vs Smart City) dengan rules dan few-shot examples yang sesuai |
 | **SQL Validation** | `main.go` | `isReadOnlySQL()` — hanya SELECT/WITH yang diizinkan |
 | **Output Cleaning** | `main.go` | `cleanSQLQuery()` — hapus noise, komentar, teks non-SQL dari output AI |
 | **Auto LIMIT** | `main.go` | `ensureLimit()` — tambahkan LIMIT 100 otomatis mencegah result set berlebihan |
@@ -206,7 +227,9 @@ npm run dev
 
 ---
 
-## 📁 Struktur Database (6 Tabel HRIS)
+## 📁 Struktur Database
+
+### Domain HRIS (6 Tabel)
 
 | Tabel | Kolom Utama |
 |-------|-------------|
@@ -216,6 +239,20 @@ npm run dev
 | `payroll` | id, employee_id, pay_date, basic_salary, bonus, deductions, net_salary |
 | `projects` | id, name, status, start_date, end_date |
 | `employee_projects` | employee_id, project_id, role |
+
+### Domain Smart City (9 Tabel)
+
+| Tabel | Kolom Utama |
+|-------|-------------|
+| `districts` | id, name, area_km2, population, budget, created_at |
+| `zones` | id, name, district_id, zone_type, area_km2 |
+| `roads` | id, road_name, district_id, zone_id, road_type, lanes, length_km, speed_limit |
+| `camera_locations` | id, road_id, location_desc, camera_type, installed_date, is_active |
+| `traffic_readings` | id, camera_id, reading_time, vehicle_count, avg_speed, congestion_level, is_peak_hour |
+| `violations` | id, camera_id, vehicle_plate, violation_type, violation_time, speed_recorded, speed_limit, fine_amount, status |
+| `weather_data` | id, zone_id, recorded_at, data_type, temperature, humidity, wind_speed, pm25, pm10, air_quality_index, weather_condition |
+| `incidents` | id, district_id, incident_type, severity, description, reported_at, resolved_at, status, response_time_minutes |
+| `infrastructure_projects` | id, project_name, district_id, project_type, budget, status, start_date, end_date |
 
 ---
 
@@ -231,23 +268,29 @@ text-to-sql-portfolio/
 │
 ├── backend-service/             # API Gateway (Go/Gin)
 │   ├── main.go                  # Entry point: HTTP server, routing, /ask, /health, /schema, /explain
-│   ├── database.go              # SQLite init, seed data
-│   ├── run_seed.py              # Script seed data
+│   ├── database.go              # HRIS SQLite init + seed data
+│   ├── database_smartcity.go    # Smart City SQLite init + seed data (9 tabel, 500+ baris)
 │   ├── .env                     # Konfigurasi (tidak di-commit)
 │   └── go.mod / go.sum          # Go dependencies
 │
 ├── frontend-service/            # UI (SvelteKit 2 / Svelte 5)
 │   ├── src/
-│   │   ├── routes/
-│   │   │   └── +page.svelte     # Main page (all features in single file)
+│   │   └── routes/
+│   │       ├── +page.svelte         # Main page (domain selector + all features)
+│   │       └── benchmark/
+│   │           ├── +page.svelte     # Benchmark dashboard (multi-domain tabs, charts, tables)
+│   │           └── +page.server.js  # Server loader (reads HRIS + Smart City results)
 │   │   └── app.html
 │   ├── package.json
 │   ├── svelte.config.js
 │   └── vite.config.js
 │
 ├── benchmark/                   # Evaluation Benchmark Suite
-│   ├── benchmark.json           # 50 pertanyaan evaluasi + expected SQL
-│   ├── run_benchmark.py         # Script eksekusi benchmark otomatis
+│   ├── benchmark.json           # 50 pertanyaan evaluasi HRIS + expected SQL
+│   ├── benchmark-smartcity.json # 30 pertanyaan evaluasi Smart City + expected SQL
+│   ├── run_benchmark.py         # Script eksekusi benchmark otomatis (multi-domain)
+│   ├── results.json             # Hasil benchmark HRIS
+│   ├── results-smartcity.json   # Hasil benchmark Smart City
 │   └── README.md                # Template & dokumentasi hasil
 │
 ├── README.md
@@ -258,20 +301,48 @@ text-to-sql-portfolio/
 
 ## 📊 Evaluation Benchmark
 
-Proyek ini dilengkapi dengan **benchmark suite** otomatis untuk mengukur akurasi Text-to-SQL secara kuantitatif.
+Proyek ini dilengkapi dengan **benchmark suite** otomatis untuk mengukur akurasi Text-to-SQL secara kuantitatif, mendukung **multi-domain**.
 
 ### Menjalankan Benchmark
 
 ```bash
 # Pastikan semua service sudah running (ai-service :8000, backend :8080)
 cd benchmark
+
+# Benchmark SEMUA domain (HRIS + Smart City, default)
 python run_benchmark.py
 
+# Benchmark HRIS saja (50 pertanyaan)
+python run_benchmark.py --domain hris
+
+# Benchmark Smart City saja (30 pertanyaan)
+python run_benchmark.py --domain smartcity
+
 # Opsi tambahan
-python run_benchmark.py --backend-url http://localhost:8080 --timeout 120
+python run_benchmark.py --domain all --timeout 120 --delay 8
 ```
 
+> **Default `--domain all`**: Menjalankan kedua domain secara berurutan. Hasil HRIS disimpan ke `results.json`, Smart City ke `results-smartcity.json`.
+
+### Benchmark Dashboard (Frontend)
+
+Dashboard benchmark tersedia di `/benchmark` dengan fitur:
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| **Domain Tabs** | Tab 👥 HRIS dan 🏙️ Smart City untuk switch antar domain |
+| **KPI Cards** | Result Accuracy, Execution Rate, Avg Response, Exact Match |
+| **Chart: Accuracy Donut** | Visualisasi persentase passed vs failed |
+| **Chart: Category Bar** | Akurasi per kategori query (horizontal bar) |
+| **Chart: Difficulty Grouped** | Executed % vs Match % per difficulty level |
+| **Chart: Response Time** | Waktu response per pertanyaan (bar chart) |
+| **Chart: Match Breakdown** | Stacked bar — exact/partial/mismatch per kategori |
+| **Detailed Results Table** | Filterable & sortable, expandable rows untuk SQL comparison |
+| **Dark Mode** | Toggle dark/light, preferensi tersimpan di localStorage |
+
 ### Benchmark Structure
+
+#### HRIS (50 pertanyaan)
 
 | Kategori | Jumlah | Difficulty | Deskripsi |
 |----------|--------|------------|-----------|
@@ -282,18 +353,27 @@ python run_benchmark.py --backend-url http://localhost:8080 --timeout 120
 | `complex` | 7 | Hard | HAVING, subqueries, ORDER BY + LIMIT |
 | `advanced` | 5 | Hard | Window functions, CTEs, correlated subqueries |
 
-**Total: 50 pertanyaan evaluasi**
+#### Smart City (30 pertanyaan)
+
+| Kategori | Jumlah | Difficulty | Deskripsi |
+|----------|--------|------------|-----------|
+| `simple_select` | 4 | Easy | Basic SELECT on cameras, districts, zones, violations |
+| `filter_where` | 4 | Easy | Filter by status, type, numeric comparison |
+| `aggregation` | 4 | Medium | Multi-table JOIN with GROUP BY, AVG, SUM, COUNT |
+| `join` | 4 | Medium | Camera-road-district-zone JOINs |
+| `complex` | 7 | Hard | Cross-domain queries, HAVING, subqueries |
+| `advanced` | 7 | Hard | Window functions, CTEs, CASE WHEN, date functions |
 
 ### Metrics
 
 | Metrik | Deskripsi |
 |--------|-----------|
 | **Execution Accuracy** | % query yang bisa dieksekusi tanpa error |
-| **Result Accuracy** | % query yang menghasilkan SQL sesuai expected (≥70% keyword match) |
-| **Exact Match** | % query yang SQL-nya persis sama dengan expected |
+| **Result Accuracy** | % query yang menghasilkan data sesuai expected (exact/partial match) |
+| **Exact Match** | % query yang hasilnya persis sama dengan expected |
 | **Avg Response Time** | Rata-rata waktu response |
 
-> Hasil benchmark tersimpan di `benchmark/results.json`. Detail lengkap: [benchmark/README.md](benchmark/README.md)
+> Hasil benchmark tersimpan di `benchmark/results.json` (HRIS) dan `benchmark/results-smartcity.json` (Smart City). Detail lengkap: [benchmark/README.md](benchmark/README.md)
 
 ---
 
