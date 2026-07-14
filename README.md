@@ -152,6 +152,32 @@ npm install
 npm run dev
 ```
 
+### ⚡ Menjalankan dengan Docker Compose (Rekomendasi Produksi Lokal)
+
+Seluruh sistem dapat dijalankan secara instan dalam kontainer Docker menggunakan **Docker Compose**. 
+
+1. **Setup `.env` di Root Workspace**:
+   Salin template dan isi API key Groq kamu:
+   ```bash
+   cp .env.example .env
+   ```
+   Buka file `.env` lalu masukkan API key Groq kamu:
+   ```env
+   GROQ_API_KEY=gsk_your_actual_groq_api_key_here
+   ```
+
+2. **Jalankan Docker Compose**:
+   ```bash
+   docker compose up --build
+   ```
+
+Setelah seluruh container sehat:
+- **Frontend** dapat diakses di: `http://localhost:3000`
+- **Backend API** dapat diakses di: `http://localhost:8080`
+- **AI Service** dapat diakses di: `http://localhost:8000`
+
+> **Penyimpanan Database**: Database SQLite akan secara otomatis disimpan secara persisten di folder `./data` di root workspace. Anda dapat menginspeksi file database (`hris.db`, `smartcity.db`) menggunakan tool database visual apa pun dari host machine Anda.
+
 ---
 
 ## 🌐 API Endpoints

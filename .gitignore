@@ -35,3 +35,6 @@ ROADMAP.md
 
 # --- Build ---
 build/
+
+# --- Local Data Mount (Docker) ---
+data/

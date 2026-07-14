@@ -38,7 +38,7 @@ COPY --from=builder /app/seed-data.sql /app/seed-data.sql
 COPY --from=builder /app/seed-extra.sql /app/seed-extra.sql
 
 # Set correct file ownership for runtime
-RUN chown -R appuser:appgroup /app
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app
 
 USER appuser
 
