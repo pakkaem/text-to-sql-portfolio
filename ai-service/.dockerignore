@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Configuration files
+.env
+
+# Model checkpoints (huge local files)
+checkpoint-*/
+
+# Git and Docker configs
+.git
+.dockerignore
+Dockerfile

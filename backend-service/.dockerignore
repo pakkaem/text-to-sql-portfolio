@@ -1,0 +1,17 @@
+# Local binaries
+backend
+backend.exe
+
+# SQLite databases & temp files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Build system & docker config
+.git
+.dockerignore
+Dockerfile
+
+# Seed scripts (optional, if you do not want to package them, but they are copied conditionally in the Dockerfile)
+run_seed.py

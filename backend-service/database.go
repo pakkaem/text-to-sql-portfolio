@@ -94,7 +94,7 @@ func getDomainDB(domain string) (*DomainInfo, error) {
 }
 
 func initHRISDB() *sql.DB {
-	dbName := getEnv("DB_NAME", "./hris.db")
+	dbName := getEnv("HRIS_DB_PATH", getEnv("DB_NAME", "./hris.db"))
 	db, err := sql.Open("sqlite", dbName)
 	if err != nil {
 		log.Fatal(err)

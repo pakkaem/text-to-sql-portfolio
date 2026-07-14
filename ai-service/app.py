@@ -29,6 +29,15 @@ app = FastAPI(
     description="API AI untuk mengubah pertanyaan natural menjadi query SQL — mendukung multiple domain (HRIS, Smart City, dll)."
 )
 
+@app.get("/health")
+async def health():
+    return {
+        "status": "healthy",
+        "model_mode": model_mode,
+        "model_loaded": (model is not None) if model_mode != "groq" else True
+    }
+
+
 # --- SKEMA REQUEST & RESPONSE ---
 class QueryRequest(BaseModel):
     schema_context: str
@@ -647,4 +656,6 @@ def _parse_json_response(raw: str) -> dict:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    host = os.getenv("AI_SERVICE_HOST", "0.0.0.0")
+    port = int(os.getenv("AI_SERVICE_PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)

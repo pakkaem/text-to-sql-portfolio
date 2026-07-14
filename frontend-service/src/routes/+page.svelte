@@ -5,8 +5,11 @@
 <script>
   // @ts-nocheck
   import { onMount } from "svelte";
+  import { env } from "$env/dynamic/public";
   import ChartComponent from "$lib/Chart.svelte";
   import { selectCharts } from "$lib/charts.js";
+
+  const API_URL = env.PUBLIC_API_URL || "http://localhost:8080";
 
   let question = $state("");
   let loading = $state(false);
@@ -32,7 +35,7 @@
 
   async function loadDomains() {
     try {
-      const resp = await fetch("http://localhost:8080/domains");
+      const resp = await fetch(`${API_URL}/domains`);
       const data = await resp.json();
       domains = data.domains || [];
       if (domains.length > 0 && !domains.find(d => d.name === currentDomain)) {
@@ -70,7 +73,7 @@
 
   async function checkHealth() {
     try {
-      const resp = await fetch("http://localhost:8080/health");
+      const resp = await fetch(`${API_URL}/health`);
       const data = await resp.json();
       healthStatus = { db: data.db === "connected", ai: data.ai_service === true, checked: true };
     } catch {
@@ -85,7 +88,7 @@
 
   async function loadSchema() {
     try {
-      const resp = await fetch(`http://localhost:8080/schema?domain=${currentDomain}`);
+      const resp = await fetch(`${API_URL}/schema?domain=${currentDomain}`);
       const data = await resp.json();
       schemaData = data.tables || [];
     } catch { schemaData = []; }
@@ -215,7 +218,7 @@
     currentPage = 0;
 
     try {
-      const response = await fetch("http://localhost:8080/ask", {
+      const response = await fetch(`${API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, domain: currentDomain })
@@ -263,7 +266,7 @@
     sqlExplanation = "";
 
     try {
-      const response = await fetch("http://localhost:8080/explain", {
+      const response = await fetch(`${API_URL}/explain`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sql: generatedSQL, question: question, domain: currentDomain })

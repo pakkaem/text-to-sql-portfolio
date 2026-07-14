@@ -271,7 +271,7 @@ func executeQueryOnDomain(domainInfo *DomainInfo, query string) ([]map[string]in
 
 func main() {
 	// 0. Baca konfigurasi dari environment variables (dengan default)
-	backendPort := getEnv("BACKEND_PORT", "8080")
+	backendPort := getEnv("PORT", getEnv("BACKEND_PORT", "8080"))
 	aiServiceURL := getEnv("AI_SERVICE_URL", "http://127.0.0.1:8000")
 	corsOrigins := getEnv("CORS_ORIGINS", "*")
 
@@ -308,7 +308,7 @@ func main() {
 		}
 
 		aiHealthy := false
-		aiCheckResp, err := http.Get(aiServiceURL + "/docs")
+		aiCheckResp, err := http.Get(aiServiceURL + "/health")
 		if err == nil && aiCheckResp.StatusCode == 200 {
 			aiHealthy = true
 			aiCheckResp.Body.Close()
