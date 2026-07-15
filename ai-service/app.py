@@ -130,9 +130,10 @@ def call_groq_api(messages: list) -> str:
         "top_p": 1,
     }
 
+    timeout_val = float(os.getenv("GROQ_TIMEOUT", "30.0"))
     max_retries = 3
     for attempt in range(max_retries):
-        resp = httpx.post(GROQ_API_URL, json=payload, headers=headers, timeout=30)
+        resp = httpx.post(GROQ_API_URL, json=payload, headers=headers, timeout=timeout_val)
 
         if resp.status_code == 429:
             # Rate limit hit — extract retry-after or use exponential backoff

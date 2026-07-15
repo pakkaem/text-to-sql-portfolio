@@ -10,6 +10,13 @@ Sistem ini menunjukkan pemisahan beban kerja (*separation of concerns*) antara l
 
 ---
 
+## 🔗 Live Demo (Production Release)
+
+*   **Frontend Web App**: [https://text-to-sql-frontend.up.railway.app](https://text-to-sql-frontend.up.railway.app) (Placeholder)
+*   **Backend API Server**: [https://text-to-sql-backend.up.railway.app](https://text-to-sql-backend.up.railway.app) (Placeholder)
+
+---
+
 ## 🏗️ Arsitektur Sistem
 
 Proyek ini mengadopsi arsitektur *microservices* sederhana:
@@ -23,26 +30,32 @@ Proyek ini mengadopsi arsitektur *microservices* sederhana:
 
 ### Alur Data
 
-```
-User → Frontend (SvelteKit :5173) → Backend (Go/Gin :8080) → AI Service (FastAPI :8000)
-                    │                           │                        │
-              domain selector             domain routing           domain-aware
-              (HRIS/Smart City)          (per-db connection)       prompt + DDL
-                                                                       │
-                                                       ┌───────────────┼───────────────┐
-                                                       ▼               ▼               ▼
-                                                   Groq API      Zero-Shot         LoRA
-                                                   (cloud)       (lokal)         (lokal)
-                                                       │               │               │
-                                                       └───────────────┼───────────────┘
-                                                                       ▼
-                                                                 SQL Query
-                                                                       │
-                                                                       ▼
-                                                         Backend executes → SQLite (domain-specific)
-                                                                       │
-                                                                       ▼
-                                                             Response → User (tabel)
+```mermaid
+graph TD
+    subgraph Client Space
+        User([User Browser])
+    end
+
+    subgraph Production Cloud Environment (e.g., Railway)
+        Frontend[Frontend Service SvelteKit<br>Port 3000]
+        
+        subgraph Private Network (analytics-network)
+            Backend[Backend Service Go/Gin<br>Port 8080]
+            AIService[FastAPI AI Service<br>Port 8000]
+        end
+        
+        Volume[(Persistent SQLite Volume<br>/app/data)]
+    end
+
+    subgraph External Cloud Services
+        Groq[Groq API Cloud<br>Llama 3.1 8B]
+    end
+
+    User -->|HTTPS| Frontend
+    User -->|Client HTTP Fetch /ask| Backend
+    Backend -->|Internal DNS Resolve| AIService
+    AIService -->|Secure API RPC| Groq
+    Backend -->|Local Read/Write| Volume
 ```
 
 ---
@@ -405,7 +418,11 @@ Dashboard benchmark tersedia di `/benchmark` dengan fitur:
 
 ## 🎨 Screenshots
 
+*Dashboard Utama (HRIS & Smart City Query Interface)*
+![Dashboard Utama](docs/assets/dashboard_main.png)
 
+*Benchmark Evaluation Dashboard (/benchmark)*
+![Benchmark Dashboard](docs/assets/dashboard_benchmark.png)
 
 ---
 
