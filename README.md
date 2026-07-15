@@ -12,8 +12,8 @@ Sistem ini menunjukkan pemisahan beban kerja (*separation of concerns*) antara l
 
 ## 🔗 Live Demo (Production Release)
 
-*   **Frontend Web App**: [https://text-to-sql-frontend.up.railway.app](https://text-to-sql-frontend.up.railway.app) (Placeholder)
-*   **Backend API Server**: [https://text-to-sql-backend.up.railway.app](https://text-to-sql-backend.up.railway.app) (Placeholder)
+*   **Frontend Web App**: [https://frontend-service-production-52c3.up.railway.app](https://frontend-service-production-52c3.up.railway.app)
+*   **Backend API**: [https://text-to-sql-portfolio-production.up.railway.app](https://text-to-sql-portfolio-production.up.railway.app)
 
 ---
 

@@ -75,7 +75,10 @@
     try {
       const resp = await fetch(`${API_URL}/health`);
       const data = await resp.json();
-      healthStatus = { db: data.db === "connected", ai: data.ai_service === true, checked: true };
+      // Backend returns: { databases: { hris: "connected", smartcity: "connected" }, ai_service: true }
+      const dbs = data.databases ?? {};
+      const allDbsConnected = Object.keys(dbs).length > 0 && Object.values(dbs).every(s => s === "connected");
+      healthStatus = { db: allDbsConnected, ai: data.ai_service === true, checked: true };
     } catch {
       healthStatus = { db: false, ai: false, checked: true };
     }
