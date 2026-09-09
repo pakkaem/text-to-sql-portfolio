@@ -18,10 +18,10 @@ backend-service/hris.db
 backend-service/smartcity.db
 backend-service/*.db-journal
 
-# --- Seed Data (Sensitive) ---
-# backend-service/seed-data.sql
-# backend-service/seed-extra.sql
-# backend-service/run_seed.py
+--- Seed Data (Sensitive) ---
+backend-service/seed-data.sql
+backend-service/seed-extra.sql
+backend-service/run_seed.py
 
 # --- OS Files ---
 .DS_Store
