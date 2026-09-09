@@ -29,7 +29,7 @@ WORKDIR /app
 
 # Copy binary & seed
 COPY --from=builder /app/backend /app/backend
-COPY --from=builder /app/seed-data.sql /app/seed-data.sql
+COPY --from=builder /app/seed-data.sql /app/seed-extra.sql
 
 # Set correct file ownership for runtime
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app
