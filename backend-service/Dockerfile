@@ -10,15 +10,10 @@ RUN apk add --no-cache ca-certificates git
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
+# Copy source code + seed data
 COPY . .
 
-# Handle gitignored seed files gracefully
-# If seed-data.sql doesn't exist (e.g., in CI or Railway git build), touch a blank file so COPY succeeds
-RUN if [ -f seed-data.sql ]; then cp seed-data.sql /app/seed-data.sql; else touch /app/seed-data.sql; fi
-RUN if [ -f seed-extra.sql ]; then cp seed-extra.sql /app/seed-extra.sql; else touch /app/seed-extra.sql; fi
-
-# Compile statically (since modernc.org/sqlite is a pure-Go driver, CGO_ENABLED=0 is fully supported)
+# Compile statically
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o backend .
 
 # Step 2: Runtime
@@ -32,18 +27,15 @@ RUN addgroup -g 10001 -S appgroup && \
 
 WORKDIR /app
 
-# Copy binary & seeds
+# Copy binary & seed
 COPY --from=builder /app/backend /app/backend
 COPY --from=builder /app/seed-data.sql /app/seed-data.sql
-COPY --from=builder /app/seed-extra.sql /app/seed-extra.sql
 
 # Set correct file ownership for runtime
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app
 
 USER appuser
 
-# Expose port (default 8080)
 EXPOSE 8080
 
-# Run the app
 CMD ["/app/backend"]
