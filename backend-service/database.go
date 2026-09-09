@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
-	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -157,36 +155,58 @@ func initHRISDB() *sql.DB {
 	db.QueryRow("SELECT COUNT(*) FROM departments").Scan(&count)
 
 	if count == 0 {
-		// Baca seed data dari file eksternal (gitignored)
-		seedFile := "seed-data.sql"
-		seedBytes, err := os.ReadFile(seedFile)
-		if err != nil {
-			log.Printf("WARNING: File '%s' tidak ditemukan atau tidak bisa dibaca: %v", seedFile, err)
-			log.Println("Database kosong! Silakan buat file 'seed-data.sql' atau jalankan seed secara manual.")
-			return db
+		seedStatements := []string{
+			// Departments
+			`INSERT INTO departments (name) VALUES ('Engineering')`,
+			`INSERT INTO departments (name) VALUES ('Human Resources')`,
+			`INSERT INTO departments (name) VALUES ('Sales')`,
+
+			// Employees
+			`INSERT INTO employees (name, department_id, job_title, hire_date) VALUES ('Budi Santoso', 1, 'Backend Engineer', '2023-01-15')`,
+			`INSERT INTO employees (name, department_id, job_title, hire_date) VALUES ('Siti Aminah', 1, 'AI Engineer', '2023-06-01')`,
+			`INSERT INTO employees (name, department_id, job_title, hire_date) VALUES ('Andi Wijaya', 2, 'HR Manager', '2022-03-10')`,
+			`INSERT INTO employees (name, department_id, job_title, hire_date) VALUES ('Rina Melati', 3, 'Sales Executive', '2024-02-20')`,
+			`INSERT INTO employees (name, department_id, job_title, hire_date) VALUES ('Tono Mulyadi', 1, 'DevOps Engineer', '2024-01-10')`,
+
+			// Attendance logs
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (1, '2024-03-01', 'Present')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (2, '2024-03-01', 'Present')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (3, '2024-03-01', 'Absent')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (4, '2024-03-01', 'Present')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (5, '2024-03-01', 'Leave')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (1, '2024-03-02', 'Present')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (2, '2024-03-02', 'Leave')`,
+			`INSERT INTO attendance_logs (employee_id, log_date, status) VALUES (3, '2024-03-02', 'Present')`,
+
+			// Payroll
+			`INSERT INTO payroll (employee_id, month_year, base_salary, bonus) VALUES (1, '2024-03', 12000000, 1500000)`,
+			`INSERT INTO payroll (employee_id, month_year, base_salary, bonus) VALUES (2, '2024-03', 15000000, 2000000)`,
+			`INSERT INTO payroll (employee_id, month_year, base_salary, bonus) VALUES (3, '2024-03', 10000000, 1000000)`,
+			`INSERT INTO payroll (employee_id, month_year, base_salary, bonus) VALUES (4, '2024-03', 8000000, 3000000)`,
+			`INSERT INTO payroll (employee_id, month_year, base_salary, bonus) VALUES (5, '2024-03', 11000000, 500000)`,
+
+			// Projects
+			`INSERT INTO projects (project_name, budget, status) VALUES ('Smart City CCTV Analytics', 50000000, 'Ongoing')`,
+			`INSERT INTO projects (project_name, budget, status) VALUES ('MBG Kitchen Hygiene AI', 35000000, 'Ongoing')`,
+			`INSERT INTO projects (project_name, budget, status) VALUES ('HRIS Migration', 15000000, 'Completed')`,
+
+			// Employee projects
+			`INSERT INTO employee_projects (employee_id, project_id, role) VALUES (1, 1, 'Backend API Developer')`,
+			`INSERT INTO employee_projects (employee_id, project_id, role) VALUES (2, 1, 'YOLO Model Trainer')`,
+			`INSERT INTO employee_projects (employee_id, project_id, role) VALUES (2, 2, 'Lead AI Engineer')`,
+			`INSERT INTO employee_projects (employee_id, project_id, role) VALUES (3, 3, 'Project Manager')`,
+			`INSERT INTO employee_projects (employee_id, project_id, role) VALUES (5, 1, 'Infrastructure Engineer')`,
 		}
 
-		seedSQL := string(seedBytes)
-		// Filter komentar dan baris kosong
-		var statements []string
-		for _, stmt := range strings.Split(seedSQL, ";") {
-			stmt = strings.TrimSpace(stmt)
-			if stmt == "" || strings.HasPrefix(stmt, "--") {
-				continue
-			}
-			statements = append(statements, stmt)
-		}
-
-		for _, stmt := range statements {
-			_, err = db.Exec(stmt)
-			if err != nil {
+		for _, stmt := range seedStatements {
+			if _, err = db.Exec(stmt); err != nil {
 				log.Printf("WARNING: Gagal eksekusi seed statement: %s | Error: %v", stmt, err)
 			}
 		}
-		log.Println("Database SQLite berhasil diinisialisasi beserta data dari seed-data.sql!")
+		log.Println("Database SQLite berhasil diinisialisasi beserta data dummy!")
 	} else {
 		log.Println("Database SQLite sudah berisi data, siap digunakan.")
 	}
 
 	return db
-}
+}
